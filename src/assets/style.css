@@ -1,0 +1,527 @@
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.header {
+  display: flex;           /* Elemente nebeneinander */
+  justify-content: space-between; /* Platz zwischen links und rechts */
+  align-items: center;     /* vertikal zentrieren */
+  flex-wrap: nowrap;             /* kein Zeilenumbruch erlaubt */
+  width: 100%;
+  padding: 0px 20px;
+  box-sizing: border-box;
+  overflow: hidden;              /* verhindert horizontales Scrollen */
+}
+ 
+.right-Side {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 30px;                     /* Desktop-Abstand */
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.logo {
+  width: 680px;                  /* Desktopgröße */
+  height: auto;
+  flex-shrink: 1;                /* darf schrumpfen, wenn zu wenig Platz */
+  max-width: 100%;               /* verhindert, dass es den Viewport sprengt */
+}
+
+#lang {
+  background: none;     /* kein Hintergrund */
+  border: none;         /* kein Rahmen */
+  color: #C5BFB3;       /* Schriftfarbe */
+  padding: 0;           /* optional: keinen Innenabstand */
+  cursor: pointer;      /* Mauszeiger zeigt Hand */
+  font-size: 20px;      /* Schriftgröße anpassen */
+  padding: 4px 6px;
+  line-height: 1.2;
+  transition: color 0.2s ease;
+}
+
+#sign {
+    padding: 7px 14px; /* Vertikaler und horizontaler Innenabstand */
+    border: none; /* Entfernt den Standard-Rahmen des Browsers */
+    border-radius: 45px; /* Leicht abgerundete Ecken */
+   
+    background-color: #C5BFB3; /* Beispiel: Ein freundliches Grün */
+    color: white; /* Textfarbe auf Weiß setzen */
+    
+    font-family: sans-serif; /* Deine gewählte Schriftart */
+    font-size: 25px; 
+    font-weight:lighter; /* Macht den Text stärker */
+    
+    /* **Verhalten** */
+    transition: background-color 0.3s ease; /* Ermöglicht eine sanfte Farbänderung */
+}
+.img { 
+    /* Entfernt die Lücken (die als Leerzeichen interpretiert werden) */
+    font-size: 0; 
+    /* Bluuren für einen leichteren Übergang*/
+    -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,0), rgba(0,0,0,1) 20%);
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-size: cover;
+}
+.img1, .img2, .img3, .img4 {
+    width: 25%; 
+    flex: 1;
+    margin: 0;
+    /* Optional: Stellt sicher, dass das Bild ohne Verzerrung die Box ausfüllt und abgeschnitten wird */
+    object-fit: cover;                
+}
+
+/* Button */
+.button-container button {
+  pointer-events: auto;
+  padding: 15px 35px;
+  font-size: 1.1rem;
+  border-radius: 50px;
+  margin-top: 0%;
+  margin-bottom: 30px;
+}
+
+h1 {
+    text-align: center;
+    margin-top: 1%;
+    font-family: 'Lora', sans-serif; 
+    font-size: 85px;
+    margin-bottom: 0%;
+    font-weight: 700;
+    color: #808080;
+
+}
+h2 {
+    text-align: center;
+    margin: 0%;
+    font-family: 'Lora', sans-serif; 
+    font-size: 32px;
+    font-weight: 700;
+    color: #808080;
+}
+
+.button-container {
+    margin-top: 1.5%;
+    display: flex; /* Aktiviert Flexbox */
+    justify-content: center; /* Zentriert die Inhalte horizontal */
+    align-items: center; /* Optional: Zentriert die Inhalte vertikal (falls der Container eine Höhe hat) */
+}
+#google_translate_element {
+  display: none; /* Versteckt das Google Widget, da du den Button nutzt */
+}
+#register {
+    padding: 15px 30px; /* Vertikaler und horizontaler Innenabstand */
+    border: none; /* Entfernt den Standard-Rahmen des Browsers */
+    border-radius: 50px; /* Leicht abgerundete Ecken */
+    
+    background-color: #BDCFAA; /* Beispiel: Ein freundliches Grün */
+    color: white; /* Textfarbe auf Weiß setzen */
+    
+    font-family: Arial, sans-serif; /* Deine gewählte Schriftart */
+    font-size: 30px; 
+    font-weight: bold; /* Macht den Text stärker */
+    
+    /* **Verhalten** */
+    cursor: pointer; /* Zeigt eine Hand, wenn man über den Button fährt (wichtig!) */
+    transition: background-color 0.3s ease; /* Ermöglicht eine sanfte Farbänderung */
+}
+
+button:active {
+  filter: brightness(90%); /* dunkler beim Drücken */
+}
+
+/* ===== AUFKLAPPFELDER BASIS ===== */
+details {
+  width: 100%;
+  margin: 0px auto;
+  border-radius: 0px;
+  overflow: hidden;
+  border: 1px solid BDCFAA(0,0,0,0.05);
+  font-family: 'Lora', sans-serif;
+}
+
+/* Kopfzeile */
+details > summary {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 40px 14px 40px;
+  cursor: pointer;
+  font-weight: 700;
+  letter-spacing: 3px;
+  font-size: clamp(18px, 3.6vw, 26px);
+  color: #333;
+}
+details > summary::-webkit-details-marker { display: none; }
+
+.section-list {
+  max-width: none;    /* Entfernt die 1100 px-Begrenzung */
+  width: 100%;        /* Nimmt volle Breite */
+  padding: 0;         /* Keine Innenabstände */
+}
+/* Pfeil rechts */
+.chevron {
+  width: 12px;
+  height: 12px;
+  border-right: 3px solid #111;
+  border-bottom: 3px solid #111;
+  transform: rotate(45deg);
+  transition: transform 0.2s ease;
+}
+details[open] > summary .chevron {
+  transform: rotate(-135deg);
+}
+
+/* Inhalt */
+.about-body, .contact-body, .faq-body {
+  padding: 16px;
+  background: #f8f9fa;
+  animation: fadeIn 0.18s ease;
+  font-size: 16px;
+}
+
+.story1, .story3{
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 30px 10px 15px;
+  background-color: #F3EFDF;
+  flex-wrap: wrap; /* wichtig: erlaubt Umbruch auf Mobile */
+}
+.story2 {
+  display: flex;
+  flex-direction: row-reverse; /* Bild kommt nach rechts */
+  align-items: center;
+  gap: 20px;
+  padding: 30px 10px 15px;
+  background-color: #BDCFAA;
+  flex-wrap: wrap; /* wichtig: erlaubt Umbruch auf Mobile */
+}
+
+.story-img {
+  width: 160px;        /* kleineres Bild */
+  height: 160px;
+  object-fit: cover;
+  border-radius: 12px;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;      /* Bild bleibt in seiner Größe */
+}
+
+
+.story-text {
+  flex: 1;             /* Text nutzt restlichen Platz */
+  min-width: 240px;    /* verhindert zu enge Textspalte */
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+/* ===== GET THE APP SECTION ===== */
+.getapp {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 40px;
+  padding: 60px 10%;
+  background-color: #ffffff; /* sanft beige Hintergrund, passt zu deinem Stil */
+  border-top: 1px solid #e0dccc;
+  border-bottom: 1px solid #e0dccc;
+  flex-wrap: wrap;
+}
+
+/* Textbereich links */
+.getapp-text {
+  flex: 1;
+  max-width: 420px;
+}
+
+.getapp-text h4 {
+  font-family: 'Lora', serif;
+  font-size: 60px;
+  text-align: center;
+  color: #6F7A62; /* leicht dunkles Grün */
+  margin-bottom: 10px;
+}
+
+.getapp-text p {
+  font-size: 20px;
+  text-align: center;
+  color: #6F7A62;
+  margin-bottom: 20px;
+}
+.store-buttons {
+  display: none; /* ausgeblendet auf Desktop */
+}
+
+/* QR-Code */
+.qrcode-img {
+  width: 200px;
+  height: auto;
+  display: block;
+  margin: 0 auto; 
+}
+
+
+/* App-Bild rechts */
+.getapp-img {
+  flex: 1;
+  max-width: 400px;
+  height: auto;
+  object-fit: contain;
+  margin: 1 auto; 
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Farbvarianten */
+.about > summary, .faq > summary {
+  background: #BDCFAA;   /* sanft beige für About */
+}
+.contact > summary {
+  background: #F3EFDF;   /* grünlich-beige für Kontakt */
+}
+
+/* Optionale Hovereffekte */
+.about > summary:hover, .faq > summary:hover { background: #b8c7a5; }
+.contact > summary:hover { background: #E9E3C9; }
+
+
+/* ===== FOOTER ===== */
+.footer {
+  background-color: #808080; 
+  padding: 25px;
+  text-align: center;
+  font-family: 'Lora', sans-serif;
+  color: #333;
+
+}
+
+/* Innerer Bereich mit Flex auf Desktop */
+.footer-content {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+/* Logo */
+.footer-logo img {
+  width: 50px;
+  height: auto;
+}
+
+/* Links */
+.footer-links {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.footer-links a {
+  color: #333;
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.2s ease;
+}
+.footer-links a:hover {
+  color: #809A74; /* dein Akzentgrün */
+}
+
+/* Social Icons */
+.footer-socials {
+  display: flex;
+  gap: 14px;
+  justify-content: center;
+  font-size: 1.4rem;
+}
+.footer-socials a {
+  color: #333;
+  transition: color 0.2s ease;
+}
+.footer-socials a:hover {
+  color: #809A74;
+}
+
+/* Untere Leiste */
+.footer-bottom {
+  margin-top: 5px;
+  border-top: 1px solid rgba(0,0,0,0.1);
+  padding-top: 12px;
+  font-size: 0.9rem;
+  color: #555;
+}
+
+/* ========== Smartphones (≤ 600px) ========== */
+@media (max-width: 600px) {
+  /* Hero über Bildern */
+  .hero-text {
+    margin-top: -30vh;
+    padding: 20vh 10px 12vh;
+    text-align: center;
+  }
+
+  /* Header kompakter */
+  .header { padding: 6px 12px; }
+  .logo { width: 45vw; }
+  .right-Side { gap: 12px; }
+  #lang { font-size: 16px; }
+  #sign { font-size: 18px; padding: 6px 10px; }
+  #register {  padding: 7px 20px; font-size: 18px; }
+
+  /* App Button kleiner*/ 
+ 
+
+
+  /* Akkordeon */
+  .accordion-row > summary {
+    min-height: 56px;
+    padding: 12px 16px;
+  }
+  .accordion-body { padding: 14px 16px; }
+
+    /* Erfolgsgeschichten – mobile Layout */
+    .story1, .story2, .story3 {
+      display: grid !important;
+      grid-template-columns: 1fr;
+      grid-template-areas:
+        "text"
+        "img";
+      text-align: center;
+      justify-items: center;
+      row-gap: 18px;
+      padding: 20px 10px;
+    }
+    .story1 .story-text, .story2 .story-text, .story3 .story-text {
+      grid-area: text;
+      font-size: clamp(14px, 4.5vw, 18px); /* größer */
+      line-height: 1.7;
+      max-width: 42rem;
+    }
+    
+      /* Basiszustand: nur Teaser-Text sichtbar */
+   /* versteckt alles außer h4 und erstem <p>, solange collapsed */
+  .story1 .story-text[data-collapsed="true"] > *:not(h4):not(p:first-of-type):not(.show-more),
+  .story2 .story-text[data-collapsed="true"] > *:not(h4):not(p:first-of-type):not(.show-more),
+  .story3 .story-text[data-collapsed="true"] > *:not(h4):not(p:first-of-type):not(.show-more) {
+    display: none;
+  }
+
+  /* "Mehr anzeigen" Link – dezenter Stil */
+  .show-more {
+    display: inline;
+    color: inherit;              /* gleiche Textfarbe wie Text */
+    text-decoration: underline;  /* wie ein normaler Link */
+    font-weight: inherit;
+    font-size: inherit;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    margin: 0;
+  }
+
+  /* sanfter Übergang beim Öffnen */
+  .story-text {
+    transition: all 0.3s ease;
+  }
+
+        
+      
+    .story1 .story-img, .story2 .story-img, .story3 .story-img {
+      grid-area: img;
+      width: min(45%, 320px);
+      height: auto;
+      aspect-ratio: 1 / 1;       /* optional: quadratisch */
+      margin-top: 6px;
+    }
+    h1 {
+      font-size: clamp(1.8rem, 8vw, 2.8rem); /* kleiner, aber dynamisch */
+      margin-top: 2vh;
+    }
+  
+    h2 {
+      font-size: clamp(1rem, 4.5vw, 1.5rem);
+      font-style: italic;
+      margin-top: 2vh;
+    }
+
+    .contact-body, .about-body, .faq-body {
+      text-align: center;
+    }
+
+    .qrcode-img, .getapp-img {
+      display: none; /* QR-Code ausblenden */
+    }
+  
+  
+    .store-buttons {
+      display: flex;                /* nebeneinander */
+      justify-content: center;      /* mittig ausgerichtet */
+      flex-wrap: wrap;              /* falls kleiner Bildschirm */
+      gap: 5px;
+      margin-top: 10px;
+    }
+  
+    .store-btn {
+      height: 60px;                 /* gleiche Größe */
+      width: auto;
+    }
+
+    .store-btn:hover {
+      transform: scale(1.05); /* leichtes Vergrößern beim Antippen */
+    }
+  
+    .getapp-text h4 {
+      font-size: 40px;
+    }
+
+    .getapp-text p {
+      display: none;
+    }
+  
+  /* Footer stapeln */
+  .footer-content {
+    flex-direction: column;
+    text-align: center;
+  }
+  .footer-links {
+    flex-direction: column;
+    gap: 10px;
+  }
+}
+
+/* ========== Tablets (601px – 992px) ========== */
+@media (min-width: 601px) and (max-width: 992px) {
+  /* Logo & Header etwas kompakter als Desktop */
+  .logo { width: 55vw; }
+  .right-Side { gap: 18px; }
+  #lang { font-size: 18px; }
+  #sign { font-size: 20px; padding: 6px 12px; }
+
+  /* Akkordeon angenehm groß lassen */
+  .accordion-row > summary {
+    min-height: 60px;
+    padding: 14px 18px;
+  }
+
+  /* Erfolgsgeschichten bleiben zweispaltig (Flex),
+     aber mit angenehmen Abständen */
+  .story1, .story2, .story3 {
+    display: flex;         /* Desktop-Layout beibehalten */
+    gap: 20px;
+    align-items: center;
+    text-align: left;
+  }
+  .story-text { font-size: 17px; }
+  .story-img { width: 180px; height: 180px; }
+}
