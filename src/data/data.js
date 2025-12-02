@@ -18,7 +18,7 @@ export const student = [
       subjects: ['WIN 1', 'Mathematik 1', 'Programmieren 1']
     },
     {
-        id: 11,
+        id: 12,
         name: 'Ben Flower',
         university: 'HTWG Konstanz',
         degreeProgram: 'Architektur',
