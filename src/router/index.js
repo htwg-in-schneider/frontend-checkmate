@@ -1,8 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import TutorCatalog from '@/views/TutorCatalog.vue';
 import TutorDetail from '@/views/TutorDetail.vue';
-import CreateProduct from '@/views/CreateProduct.vue';
-import EditProduct from '@/views/EditProduct.vue';
+import CreateTutor from '@/views/CreateTutor.vue';
+import EditTutor from '@/views/EditTutor.vue';
 
 const routes = [
   { path: '/', component: TutorCatalog },
