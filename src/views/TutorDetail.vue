@@ -19,7 +19,7 @@ const showReviews = ref(false);
 onMounted(async () => {
   try {
    // const res = await fetch(`http://localhost:8081/api/tutors/${props.id}`);
-    const res = `${import.meta.env.VITE_API_BASE_URL}/api/tutors`;
+    const res = `${import.meta.env.VITE_API_BASE_URL}/api/tutors/${props.id}`;
 
 
     if (res.status === 404) {
