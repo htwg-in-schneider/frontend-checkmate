@@ -1,22 +1,27 @@
 import { createRouter, createWebHistory } from 'vue-router';
 
-import TutorCatalog from '../views/TutorCatalog.vue';  
-import TutorDetail from '../views/TutorDetail.vue';     
+import AppHome from '../App.vue';            // Landing Page mit Stories etc.
+import TutorCatalog from '../views/TutorCatalog.vue';
+import TutorDetail from '../views/TutorDetail.vue';
 
 const routes = [
   {
-    path: '/tutors',
+    path: '/',
     name: 'home',
-    component: TutorCatalog
+    component: AppHome,          // Startseite: deine große Marketing-Landingpage
+  },
+  {
+    path: '/tutors',
+    name: 'tutors',
+    component: TutorCatalog,     // Seite mit Filter + TutorCards
   },
   {
     path: '/tutor/:id',
     name: 'tutor',
     component: TutorDetail,
-    props: true
-  }
+    props: true,
+  },
 ];
-
 
 const router = createRouter({
   history: createWebHistory(),

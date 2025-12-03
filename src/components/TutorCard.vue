@@ -1,5 +1,5 @@
 <script setup>
-import NavButton from '@/components/NavButton.vue'; // WICHTIG: damit der Button funktioniert!
+import TutorReviews from '@/components/TutorReviews.vue';
 
 const props = defineProps({
   tutor: {
@@ -8,8 +8,9 @@ const props = defineProps({
   },
 });
 
-function showAlert(description) {
-  alert(description);
+function contactTutor() {
+  if (!props.tutor) return;
+  alert(`Du kontaktierst ${props.tutor.name} für ${props.tutor.subject}.`);
 }
 </script>
 
@@ -26,27 +27,29 @@ function showAlert(description) {
       <h5 class="card-title">{{ tutor.name }}</h5>
       <p class="card-text">{{ tutor.subject }}</p>
       <p class="text-muted small">Semester: {{ tutor.semester }}</p>
+
+      <!-- ⭐ Reviews direkt unter den Basisinfos -->
       <TutorReviews :tutor-id="tutor.id" />
 
       <button
-        class="btn btn-primary w-100 mt-2"
-        @click="showAlert(`Du kontaktierst ${tutor.name} für ${tutor.subject}`)"
+        class="btn btn-primary w-100 mt-3"
+        @click="contactTutor"
       >
         Kontaktieren
       </button>
-
-      <!-- NAVBUTTON unten -->
-      <NavButton
-        variant="secondary"
-        class="mt-3 w-100"
-        :to="`/tutor/edit/${tutor.id}`"
-      >
-        Bearbeiten
-      </NavButton>
     </div>
   </div>
 </template>
 
 <style scoped>
-/* Optional eigene Styles */
+/* optional: leichte Hover-Animation */
+.card {
+  border-radius: 12px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+}
 </style>

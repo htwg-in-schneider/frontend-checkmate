@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted } from 'vue';
 
 const props = defineProps({
   tutorId: {
@@ -12,7 +12,7 @@ const reviews = ref([]);
 const loading = ref(false);
 const error = ref(null);
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8081";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081';
 const reviewUrl = `${API_BASE}/api/review/tutor`;
 
 async function fetchReviews() {
@@ -22,41 +22,41 @@ async function fetchReviews() {
   error.value = null;
 
   try {
-    const response = await fetch(`${reviewUrl}/${props.tutorId}`);
+    const res = await fetch(`${reviewUrl}/${props.tutorId}`);
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    if (!res.ok) {
+      throw new Error(`HTTP error! status: ${res.status}`);
     }
 
-    reviews.value = await response.json();
-  } catch (err) {
-    console.error("Error fetching reviews:", err);
-    error.value = "Bewertungen konnten nicht geladen werden.";
+    const data = await res.json();
+    console.log('Reviews für Tutor', props.tutorId, data);
+    reviews.value = data;
+  } catch (e) {
+    console.error('Fehler beim Laden der Reviews:', e);
+    error.value = 'Bewertungen konnten nicht geladen werden.';
   } finally {
     loading.value = false;
   }
 }
 
 onMounted(fetchReviews);
-watch(() => props.tutorId, fetchReviews);
 </script>
 
 <template>
   <div class="reviews-wrapper">
-
     <!-- Loading -->
-    <p v-if="loading" class="small text-muted">Lade Bewertungen…</p>
+    <p v-if="loading" class="small text-muted mb-1">Lade Bewertungen…</p>
 
     <!-- Error -->
-    <p v-else-if="error" class="small text-danger">{{ error }}</p>
+    <p v-else-if="error" class="small text-danger mb-1">{{ error }}</p>
 
     <!-- Keine Reviews -->
-    <p v-else-if="reviews.length === 0" class="small text-muted">
+    <p v-else-if="reviews.length === 0" class="small text-muted mb-1">
       Keine Bewertungen vorhanden.
     </p>
 
     <!-- Reviews -->
-    <div v-else class="d-flex flex-column gap-2">
+    <div v-else class="d-flex flex-column gap-1">
       <div
         v-for="review in reviews"
         :key="review.id"
@@ -77,16 +77,14 @@ watch(() => props.tutorId, fetchReviews);
         <p class="small text-muted mb-0">{{ review.text }}</p>
       </div>
     </div>
-
   </div>
 </template>
 
 <style scoped>
 .reviews-wrapper {
-  margin-top: 10px;
+  margin-top: 8px;
 }
 
-/* Review-Box kompakt & card-friendly */
 .review-item {
   background: #fafafa;
 }
