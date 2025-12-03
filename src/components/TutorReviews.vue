@@ -28,9 +28,7 @@ async function fetchReviews() {
       throw new Error(`HTTP error! status: ${res.status}`);
     }
 
-    const data = await res.json();
-    console.log('Reviews für Tutor', props.tutorId, data);
-    reviews.value = data;
+    reviews.value = await res.json();
   } catch (e) {
     console.error('Fehler beim Laden der Reviews:', e);
     error.value = 'Bewertungen konnten nicht geladen werden.';
@@ -65,6 +63,7 @@ onMounted(fetchReviews);
         <div class="d-flex justify-content-between align-items-center mb-1">
           <strong class="small">{{ review.userName }}</strong>
 
+          <!-- ⭐⭐ Sterne-Anzeige -->
           <div class="text-warning small">
             <i
               v-for="n in 5"
