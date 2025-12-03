@@ -1,40 +1,39 @@
-<script setup>
-
-//Iteration3
-import { tutors } from './data.js';
-function getTutors() {
-  return tutors;
-}
-
-
-</script>
-
 <template>
-  <div>
-    <!-- Coming Soon Screen -->
-    <div v-if="showComingSoon" class="coming-soon">
+  <div id="app">
+    <!-- 1. TutorList-Seite -->
+    <div v-if="showTutorList">
+      <TutorList />
+
+      <div class="text-center my-4">
+        <button class="btn btn-outline-secondary" @click="showTutorList = false">
+          Zurück zur Startseite
+        </button>
+      </div>
+    </div>
+
+    <!-- 2. Coming Soon Screen -->
+    <div v-else-if="showComingSoon" class="coming-soon">
       <h1 style="text-align: center; margin-top: 40vh;">
         🚧 To be continued...
       </h1>
+
+      <div class="text-center mt-4">
+        <button class="btn btn-outline-secondary" @click="showComingSoon = false">
+          Zurück zur Startseite
+        </button>
+      </div>
     </div>
 
-    <!-- Hauptseite -->
+    <!-- 3. Hauptseite (Landing Page) -->
     <div v-else>
-      <div class="header">
-        <img class="logo" src="assets/img/logoheader2.jpg" alt="CheckMate Logo" />
-        <div class="right-Side">
-          <button id="lang" @click="toggleLanguage">
-            <i class="fa-solid fa-globe"></i> Sprache
-          </button>
-          <button id="sign" @click="handleComingSoon">Einloggen</button>
-        </div>
-      </div>
+      <!-- 👉 ausgelagerte Navigation -->
+      <Navbar @open-tutor-list="openTutorList" />
 
       <div class="img">
-        <img class="img1" src="assets/img/webtech1.jpg" alt="b1" />
-        <img class="img2" src="assets/img/webtech4.jpg" alt="b2" />
-        <img class="img3" src="assets/img/webtech2.jpg" alt="b3" />
-        <img class="img4" src="assets/img/webtech3.jpg" alt="b4" />
+        <img class="img1" src="./assets/img/webtech1.jpg" alt="b1" />
+        <img class="img2" src="./assets/img/webtech4.jpg" alt="b2" />
+        <img class="img3" src="./assets/img/webtech2.jpg" alt="b3" />
+        <img class="img4" src="./assets/img/webtech3.jpg" alt="b4" />
       </div>
 
       <h1>Du bist nicht allein!</h1>
@@ -51,7 +50,7 @@ function getTutors() {
         <!-- Erfolgsstory 1 -->
         <div class="story1">
           <img
-            src="assets/img/erfolgsgeschichte.png"
+            src="./assets/img/erfolgsgeschichte.png"
             alt="Erfolgsgeschichte von Lisa und Max"
             class="story-img"
           />
@@ -80,7 +79,7 @@ function getTutors() {
         <!-- Erfolgsstory 2 -->
         <div class="story2">
           <img
-            src="assets/img/tutorin.png"
+            src="./assets/img/tutorin.png"
             alt="Erfolgsgeschichte von Mia"
             class="story-img"
           />
@@ -110,7 +109,7 @@ function getTutors() {
         <!-- Erfolgsstory 3 -->
         <div class="story3">
           <img
-            src="assets/img/studygroup.png"
+            src="./assets/img/studygroup.png"
             alt="Study Group Erfolgsgeschichte"
             class="story-img"
           />
@@ -138,8 +137,6 @@ function getTutors() {
             </p>
           </div>
         </div>
-
-       
 
         <!-- ABOUT -->
         <details class="about">
@@ -225,66 +222,71 @@ function getTutors() {
             </p>
           </div>
         </details>
-        <Footer></Footer>
+
+        <!-- Footer -->
+        <Footer />
       </div>
     </div>
   </div>
-
-  <router-view> </router-view>
 </template>
 
+<router-view></router-view>
+
 <script>
+import Navbar from './components/Navbar.vue';
+import TutorList from './components/TutorList.vue';
+import Footer from './components/Footer.vue';
+
 export default {
-  name: "App",
+  name: 'App',
+  components: {
+    Navbar,
+    TutorList,
+    Footer,
+  },
   data() {
     return {
+      showTutorList: false,
       showComingSoon: false,
     };
   },
   methods: {
-    toggleLanguage() {
-      const select = document.querySelector(".goog-te-combo");
-      if (select) {
-        const newValue = select.value === "en" ? "de" : "en";
-        select.value = newValue;
-        select.dispatchEvent(new Event("change"));
-      } else {
-        alert(
-          "Google Translate konnte noch nicht geladen werden. Bitte kurz warten."
-        );
-      }
+    openTutorList() {
+      this.showTutorList = true;
+      this.showComingSoon = false;
     },
     handleComingSoon() {
       this.showComingSoon = true;
+      this.showTutorList = false;
     },
     initMobileStoryToggles() {
       const blocks = this.$el.querySelectorAll(
-        ".story1 .story-text, .story2 .story-text, .story3 .story-text"
+        '.story1 .story-text, .story2 .story-text, .story3 .story-text'
       );
 
       blocks.forEach((block) => {
-        const paragraphs = block.querySelectorAll("p");
-        const title = block.querySelector("h4");
+        const paragraphs = block.querySelectorAll('p');
+        const title = block.querySelector('h4');
         if (!title || paragraphs.length < 2) return;
 
-        block.setAttribute("data-collapsed", "true");
+        block.setAttribute('data-collapsed', 'true');
 
-        const btn = document.createElement("button");
-        btn.className = "show-more";
-        btn.type = "button";
-        btn.textContent = "Mehr anzeigen";
+        const btn = document.createElement('button');
+        btn.className = 'show-more';
+        btn.type = 'button';
+        btn.textContent = 'Mehr anzeigen';
 
         paragraphs[0].after(btn);
 
-        btn.addEventListener("click", () => {
-          const collapsed = block.getAttribute("data-collapsed") === "true";
-          block.setAttribute("data-collapsed", collapsed ? "false" : "true");
-          btn.textContent = collapsed ? "Weniger anzeigen" : "Mehr anzeigen";
+        btn.addEventListener('click', () => {
+          const collapsed = block.getAttribute('data-collapsed') === 'true';
+          block.setAttribute('data-collapsed', collapsed ? 'false' : 'true');
+          btn.textContent = collapsed ? 'Weniger anzeigen' : 'Mehr anzeigen';
 
           if (collapsed) {
             block.appendChild(btn);
           } else {
-            const firstP = block.querySelector("p");
+            const firstP = block.querySelector('p');
             if (firstP) firstP.after(btn);
           }
         });
@@ -292,14 +294,13 @@ export default {
     },
   },
   mounted() {
-    if (window.matchMedia("(max-width: 600px)").matches) {
+    if (window.matchMedia('(max-width: 600px)').matches) {
       this.initMobileStoryToggles();
     }
   },
 };
 </script>
 
-<!-- Optional: du kannst Styles hier leer lassen, da du style.css verwendest -->
 <style>
-/* Optional zusätzliche component-spezifische Styles */
-</style>  
+/* Optional: component-spezifische Styles */
+</style>

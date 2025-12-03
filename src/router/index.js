@@ -1,25 +1,24 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import TutorCatalog from '@/views/TutorCatalog.vue';
-import TutorDetail from '@/views/TutorDetail.vue';
-import CreateTutor from '@/views/CreateTutor.vue';
-import EditTutor from '@/views/EditTutor.vue';
+
+import TutorCatalog from '../views/TutorCatalog.vue';  
+import TutorDetail from '../views/TutorDetail.vue';     
 
 const routes = [
-  { path: '/', component: TutorCatalog },
-  { 
-    path: '/tutor/view/:id', 
-    name: 'tutor',
-    component: TutorCatalog,
-    props: true
-
+  {
+    path: '/',
+    name: 'home',
+    component: TutorCatalog
   },
-  { path: '/tutor/create', component: CreateTutor },
-  { path: '/tutor/edit/:id', component: EditTutor },
-
+  {
+    path: '/tutor/:id',
+    name: 'tutor',
+    component: TutorDetail,
+    props: true
+  }
 ];
 
 const router = createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
+  history: createWebHistory(),
   routes,
 });
 

@@ -472,14 +472,7 @@ details[open] > summary .chevron {
       margin-top: 10px;
     }
   
-    .store-btn {
-      height: 60px;                 /* gleiche Größe */
-      width: auto;
-    }
-
-    .store-btn:hover {
-      transform: scale(1.05); /* leichtes Vergrößern beim Antippen */
-    }
+ 
   
     .getapp-text h4 {
       font-size: 40px;
