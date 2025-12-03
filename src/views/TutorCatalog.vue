@@ -6,7 +6,8 @@ import Footer from '@/components/Footer.vue';
 import TutorFilter from '@/components/TutorFilter.vue';
 import TutorReviews from '@/components/TutorReviews.vue';
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081';
+const API_BASE = import.meta.env.VITE_API_BASE_URL 
+//|| 'http://localhost:8081';
 const url = `${API_BASE}/api/tutors`;
 
 // komplette Liste aus dem Backend

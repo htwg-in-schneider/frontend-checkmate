@@ -9,3 +9,5 @@ createApp(App)
   .use(router)
   .use(pinia)
   .mount('#app');
+
+console.log('API Base URL:', import.meta.env.VITE_API_BASE_URL)

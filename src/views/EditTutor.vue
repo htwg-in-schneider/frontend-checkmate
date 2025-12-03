@@ -7,8 +7,8 @@ const route = useRoute();
 const router = useRouter();
 
 // Backend-Endpoint für einen einzelnen Tutor
-const url = 'http://localhost:8081/api/tutors';
-
+//const url = 'http://localhost:8081/api/tutors';
+const url = `${import.meta.env.VITE_API_BASE_URL}/api/tutors`;
 const tutor = ref({});
 
 onMounted(async () => {

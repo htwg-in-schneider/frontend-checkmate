@@ -18,7 +18,9 @@ const showReviews = ref(false);
 
 onMounted(async () => {
   try {
-    const res = await fetch(`http://localhost:8081/api/tutors/${props.id}`);
+   // const res = await fetch(`http://localhost:8081/api/tutors/${props.id}`);
+    const res = `${import.meta.env.VITE_API_BASE_URL}/api/tutors`;
+
 
     if (res.status === 404) {
       error.value = "Tutor:in nicht gefunden.";
