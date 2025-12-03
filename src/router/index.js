@@ -5,7 +5,7 @@ import TutorDetail from '../views/TutorDetail.vue';
 
 const routes = [
   {
-    path: '/',
+    path: '/tutors',
     name: 'home',
     component: TutorCatalog
   },
@@ -16,6 +16,7 @@ const routes = [
     props: true
   }
 ];
+
 
 const router = createRouter({
   history: createWebHistory(),
