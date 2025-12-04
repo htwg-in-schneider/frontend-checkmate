@@ -35,8 +35,8 @@ function onReset() {
 </script>
 
 <template>
-  <!-- EXTRA-auffällig gemacht -->
   <div class="tutor-filter-box">
+    <!-- OBERSTE ZEILE: Label + Eingabefelder wie bisher -->
     <div class="d-flex align-items-center gap-2 flex-wrap justify-content-end">
       <span class="me-2 fw-bold">Filter:</span>
 
@@ -64,11 +64,13 @@ function onReset() {
           {{ subject }}
         </option>
       </select>
+    </div>
 
-      <!-- Buttons -->
+    <!-- NEUE ZEILE: Buttons unterhalb der Felder, nebeneinander rechts -->
+    <div class="d-flex gap-2 justify-content-end mt-2">
       <button
         type="button"
-        class="btn btn-primary btn-sm"
+        class="btn btn-primary btn-sm search-btn"
         @click="onSearch"
       >
         🔍 Suchen
@@ -93,5 +95,16 @@ function onReset() {
   margin: -1.5rem auto 1.5rem auto; /* ein bisschen näher an den Header ran */
   max-width: 1100px;
   border-radius: 8px;
+}
+
+.search-btn {
+  background-color: #607953 !important; /* CheckMate-Grün */
+  border-color: #607953 !important;
+  color: white !important;
+}
+
+.search-btn:hover {
+  background-color: #4f6746 !important;
+  border-color: #4f6746 !important;
 }
 </style>
