@@ -120,6 +120,14 @@ function handleTutorUpdate({ name, subject }) {
         Keine Tutor:innen gefunden. Passe Suche oder Kategorie an.
       </p>
     </div>
+    <div class="text-center mt-5">
+      <button
+        class="btn btn-outline-secondary"
+        @click="$router.push('/')"
+      >
+        Zurück zur Startseite
+      </button>
+    </div>
   </div>
 </template>
 
