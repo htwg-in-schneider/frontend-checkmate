@@ -80,50 +80,76 @@ function handleTutorUpdate({ name, subject }) {
 </script>
 
 <template>
-  <div class="container py-4 tutorlist">
+  <!-- NEU: Wrapper mit Hintergrundbild -->
+  <div class="tutor-page">
+    <div class="container py-4 tutorlist">
 
-    <!-- Header-Bereich -->
-    <div class="tutor-header-container">
+      <!-- Header-Bereich -->
+      <div class="tutor-header-container">
 
-      <!-- Filter oben rechts -->
-      <div class="filter-top-right">
-        <div class="filter-clean">
-          <TutorFilter
-            :subjects="categories"
-            @tutorUpdate="handleTutorUpdate"
-          />
+        <!-- Filter oben rechts -->
+        <div class="filter-top-right">
+          <div class="filter-clean">
+            <TutorFilter
+              :subjects="categories"
+              @tutorUpdate="handleTutorUpdate"
+            />
+          </div>
         </div>
+
+        <!-- Titel links -->
+        <h1 class="tutor-title">Unsere Tutor:innen</h1>
       </div>
 
-      <!-- Titel links -->
-      <h1 class="tutor-title">Unsere Tutor:innen</h1>
-    </div>
+      <!-- Lade- & Fehlerzustände -->
+      <p v-if="loading" class="text-center">Lade Tutor:innen…</p>
+      <p v-else-if="error" class="text-center text-danger">{{ error }}</p>
 
-    <!-- Lade- & Fehlerzustände -->
-    <p v-if="loading" class="text-center">Lade Tutor:innen…</p>
-    <p v-else-if="error" class="text-center text-danger">{{ error }}</p>
+      <!-- Tutor:innen-Liste -->
+      <div v-else class="row g-4">
+        <div
+          v-for="tutor in filteredTutors"
+          :key="tutor.id"
+          class="col-md-4"
+        >
+          <TutorCard :tutor="tutor" />
+        </div>
 
-    <!-- Tutor:innen-Liste -->
-    <div v-else class="row g-4">
-      <div
-        v-for="tutor in filteredTutors"
-        :key="tutor.id"
-        class="col-md-4"
-      >
-        <TutorCard :tutor="tutor" />
+        <p
+          v-if="!filteredTutors.length && !loading"
+          class="text-center mt-4"
+        >
+          Keine Tutor:innen gefunden. Passe Suche oder Kategorie an.
+        </p>
       </div>
 
-      <p
-        v-if="!filteredTutors.length && !loading"
-        class="text-center mt-4"
-      >
-        Keine Tutor:innen gefunden. Passe Suche oder Kategorie an.
-      </p>
+      <div class="text-center mt-5">
+        <button
+          class="btn btn-outline-secondary"
+          @click="$router.push('/')"
+        >
+          Zurück zur Startseite
+        </button>
+      </div>
     </div>
   </div>
 </template>
 
 <style scoped>
+/* GANZE Tutor-Seite mit faded Hintergrundbild */
+.tutor-page {
+  min-height: 100vh;
+  /* leichte weiße Schicht drüber, damit es "gefadet" wirkt */
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.75)),
+    url('@/assets/img/background.avif');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  padding-top: 4rem; /* etwas Luft unter der Navbar */
+  padding-bottom: 4rem;
+}
+
 /* Header Layout */
 .tutor-header-container {
   position: relative;
@@ -131,11 +157,21 @@ function handleTutorUpdate({ name, subject }) {
 }
 
 /* Überschrift links */
-.tutor-title {
+/*.tutor-title {
   font-weight: 600;
   text-align: left;
   margin-top: 48px; /* Platz für Filter */
+  .tutor-title {
+  font-family: sans-serif;
+  font-size: 80px;
+  font-weight: 600;
+  color: white !important;
+  letter-spacing: 0.8px;
+    text-align: left;
+     text-shadow: 0 0 12px #607953;
+
 }
+
 
 /* Filter oben rechts */
 .filter-top-right {
@@ -154,6 +190,10 @@ function handleTutorUpdate({ name, subject }) {
 
 /* Mobile: Filter unter dem Titel */
 @media (max-width: 576px) {
+  .tutor-page {
+    padding-top: 2rem;
+  }
+
   .filter-top-right {
     position: static;
     margin-bottom: 1rem;

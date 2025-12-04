@@ -1,14 +1,14 @@
 import { createRouter, createWebHistory } from 'vue-router';
 
-import AppHome from '../App.vue';            // Landing Page mit Stories etc.
+import Home from '@/views/Home.vue';
 import TutorCatalog from '../views/TutorCatalog.vue';
 import TutorDetail from '../views/TutorDetail.vue';
 
 const routes = [
-  {
+   {
     path: '/',
     name: 'home',
-    component: AppHome,          // Startseite: deine große Marketing-Landingpage
+    component: Home
   },
   {
     path: '/tutors',
@@ -21,6 +21,11 @@ const routes = [
     component: TutorDetail,
     props: true,
   },
+  {
+  path: '/tutoren',
+  name: 'TutorList',
+  component: () => import('@/components/TutorList.vue')
+}
 ];
 
 const router = createRouter({
