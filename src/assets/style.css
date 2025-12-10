@@ -25,12 +25,6 @@ html, body {
   white-space: nowrap;
 }
 
-.logo {
-  width: 680px;                  /* Desktopgröße */
-  height: auto;
-  flex-shrink: 1;                /* darf schrumpfen, wenn zu wenig Platz */
-  max-width: 100%;               /* verhindert, dass es den Viewport sprengt */
-}
 
 #lang {
   background: none;     /* kein Hintergrund */
@@ -78,7 +72,7 @@ html, body {
 /* Button */
 .button-container button {
   pointer-events: auto;
-  padding: 15px 35px;
+  padding: 15px 35px; 
   font-size: 1.1rem;
   border-radius: 50px;
   margin-top: 0%;
@@ -90,6 +84,7 @@ html, body {
 h1 {
     text-align: center;
     margin-top: 1%;
+    margin-bottom: 5%;
     font-family: 'Lora', sans-serif; 
     font-size: 85px;
     margin-bottom: 0%;

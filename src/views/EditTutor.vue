@@ -42,8 +42,8 @@ async function updateTutor() {
       throw new Error(`Fehler beim Aktualisieren: ${response.status}`);
     }
 
-    alert('Tutor erfolgreich aktualisiert!');
-    router.push('/tutors');
+   // alert('Tutor erfolgreich aktualisiert!');
+    router.push('/tutoren');
   } catch (error) {
     console.error('Fehler beim Aktualisieren des Tutors:', error);
     alert('Tutor konnte nicht aktualisiert werden.');
@@ -51,7 +51,7 @@ async function updateTutor() {
 }
 
 async function deleteTutor() {
-  if (!confirm('Möchtest du diesen Tutor wirklich löschen?')) return;
+  //if (!confirm('Möchtest du diesen Tutor wirklich löschen?')) return;
 
   try {
     const response = await fetch(`${url}/${tutor.value.id}`, {
@@ -62,11 +62,11 @@ async function deleteTutor() {
       throw new Error(`Fehler beim Löschen: ${response.status}`);
     }
 
-    alert('Tutor erfolgreich gelöscht!');
-    router.push('/tutors');
+    //alert('Tutor erfolgreich gelöscht!');
+    router.push('/tutoren');
   } catch (error) {
     console.error('Fehler beim Löschen des Tutors:', error);
-    alert('Tutor konnte nicht gelöscht werden.');
+    //alert('Tutor konnte nicht gelöscht werden.');
   }
 }
 </script>

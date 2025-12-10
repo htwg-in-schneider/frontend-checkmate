@@ -165,4 +165,42 @@ function showComingSoon() {
   gap: 1rem;
   align-items: center;
 }
+#home {
+  background-color:  #697C44; /* Oder was du willst */
+  min-height: 100vh;
+}
+
+h1 {
+    text-align: center;
+    margin-top: 1%;
+    font-family: 'Lora', sans-serif; 
+    font-size: 85px;
+    font-weight: 700;
+    color: #262424;
+
+}
+h2 {
+    text-align: center;
+    margin: 1%;
+    padding-bottom: 2%;
+    font-family: 'Lora', sans-serif; 
+    font-size: 32px;
+    font-weight: 700;
+    color: #262424;
+}
+@media (max-width: 800px) {
+    h1 {
+      font-size: clamp(1.8rem, 8vw, 2.8rem); /* kleiner, aber dynamisch */
+      margin: 2vh;
+    }
+  
+    h2 {
+      font-size: clamp(1rem, 4.5vw, 1.5rem);
+      font-style: italic;
+      margin-bottom: 1%;
+      padding-bottom: 2%;
+    }
+
+}
+
 </style>
