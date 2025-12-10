@@ -16,10 +16,44 @@ const error = ref(null);
 const searchName = ref('');
 const selectedCategory = ref(''); // "" = keine Kategorie → alle anzeigen
 
+const showCreateForm = ref(false);
+const newTutor = ref({
+  name: "",
+  subject: "",
+  semester: 1,
+  image: ""
+});
+
+
 // Daten laden, sobald Komponente gemountet ist
 onMounted(async () => {
   await Promise.all([fetchTutors(), fetchCategories()]);
 });
+
+async function createTutor() {
+  try {
+    const response = await fetch(`${API_BASE}/api/tutors`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(newTutor.value)
+    });
+
+    if (!response.ok) {
+      throw new Error("Error creating tutor");
+    }
+
+    //alert("Tutor erfolgreich erstellt!");
+
+    showCreateForm.value = false;
+    newTutor.value = { name: "", subject: "", semester: 1, image: "" };
+
+    await fetchTutors(); // Liste nachladen
+  } catch (err) {
+    console.error(err);
+   // alert("Fehler beim Erstellen");
+  }
+}
+
 
 // Tutor:innen vom Backend holen
 async function fetchTutors() {
@@ -39,6 +73,8 @@ async function fetchTutors() {
     loading.value = false;
   }
 }
+
+
 
 // Kategorien aus dem Backend holen
 async function fetchCategories() {
@@ -77,11 +113,20 @@ function handleTutorUpdate({ name, subject }) {
   searchName.value = name;
   selectedCategory.value = subject;
 }
+
+function handleTutorDeleted(id) {
+  tutors.value = tutors.value.filter(t => t.id !== id);
+}
+
 </script>
 
 <template>
+
+
   <!-- NEU: Wrapper mit Hintergrundbild -->
   <div class="tutor-page">
+
+    
     <div class="container py-4 tutorlist">
 
       <!-- Header-Bereich -->
@@ -100,6 +145,11 @@ function handleTutorUpdate({ name, subject }) {
         <!-- Titel links -->
         <h1 class="tutor-title">Unsere Tutor:innen</h1>
       </div>
+        <div class="text-end mb-3">
+  <button class="btn btn-success" @click="showCreateForm = true">
+    + Tutor erstellen
+  </button>
+</div>
 
       <!-- Lade- & Fehlerzustände -->
       <p v-if="loading" class="text-center">Lade Tutor:innen…</p>
@@ -112,7 +162,10 @@ function handleTutorUpdate({ name, subject }) {
           :key="tutor.id"
           class="col-md-4"
         >
-          <TutorCard :tutor="tutor" />
+          <TutorCard
+           :tutor="tutor"
+           @deleted="handleTutorDeleted"
+          />
         </div>
 
         <p
@@ -133,9 +186,44 @@ function handleTutorUpdate({ name, subject }) {
       </div>
     </div>
   </div>
+  <div v-if="showCreateForm" class="modal-backdrop">
+  <div class="modal-content">
+    <h3>Neuen Tutor erstellen</h3>
+
+    <input v-model="newTutor.name" class="form-control mb-2" placeholder="Name" />
+    <input v-model="newTutor.subject" class="form-control mb-2" placeholder="Fach" />
+    <input v-model="newTutor.semester" type="number" class="form-control mb-2" placeholder="Semester" />
+    <input v-model="newTutor.image" class="form-control mb-2" placeholder="Bild-URL" />
+
+    <div class="d-flex gap-2 mt-3">
+      <button class="btn btn-success" @click="createTutor">Erstellen</button>
+      <button class="btn btn-secondary" @click="showCreateForm = false">Abbrechen</button>
+    </div>
+  </div>
+</div>
 </template>
 
+
+
 <style scoped>
+
+  .modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-content {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  width: 400px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+}
+
 /* GANZE Tutor-Seite mit faded Hintergrundbild */
 .tutor-page {
   min-height: 100vh;

@@ -10,11 +10,11 @@ const routes = [
     name: 'home',
     component: Home
   },
-  {
-    path: '/tutors',
-    name: 'tutors',
-    component: TutorCatalog,     // Seite mit Filter + TutorCards
-  },
+ // {
+  //  path: '/tutors',
+  //  name: 'tutors',
+  //  component: TutorCatalog,     // Seite mit Filter + TutorCards
+ // },
   {
     path: '/tutor/:id',
     name: 'tutor',
@@ -25,7 +25,15 @@ const routes = [
   path: '/tutoren',
   name: 'TutorList',
   component: () => import('@/components/TutorList.vue')
+  },
+  {
+  path: '/tutor/:id/edit',
+  name: 'editTutor',
+  component: () => import('@/views/EditTutor.vue'),
+  props: true
 }
+
+
 ];
 
 const router = createRouter({

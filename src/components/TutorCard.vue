@@ -7,10 +7,26 @@ const props = defineProps({
     required: true,
   },
 });
+const emit = defineEmits(["deleted"]);
+const API_BASE = import.meta.env.VITE_API_BASE_URL;
+
+async function deleteTutor() {
+   console.log("deleteTutor wurde aufgerufen!");
+
+  //const ok = confirm(`Willst du ${props.tutor.name} wirklich löschen?`);
+  //if (!ok) return;
+
+  const response = await fetch(`${API_BASE}/api/tutors/${props.tutor.id}`, {
+    method: "DELETE",
+  });d
+
+
+  emit("deleted", props.tutor.id);
+}
 
 function contactTutor() {
   if (!props.tutor) return;
-  alert(`Du kontaktierst ${props.tutor.name} für ${props.tutor.subject}.`);
+ // alert(`Du kontaktierst ${props.tutor.name} für ${props.tutor.subject}.`);
 }
 </script>
 
@@ -33,6 +49,18 @@ function contactTutor() {
   @click="contactTutor"
 >
   Kontaktieren
+</button>
+<button
+  class="btn btn-warning w-100 mt-2"
+  @click="$router.push(`/tutor/${tutor.id}/edit`)"
+>
+  Bearbeiten
+</button>
+<button
+  class="btn btn-danger w-100 mt-2"
+  @click="deleteTutor"
+>
+  Löschen
 </button>
     </div>
   </div>
