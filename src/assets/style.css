@@ -182,40 +182,6 @@ details[open] > summary .chevron {
   font-size: 16px;
 }
 
-.story1, .story3{
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  padding: 30px 10px 15px;
-  background-color: #F3EFDF;
-  flex-wrap: wrap; /* wichtig: erlaubt Umbruch auf Mobile */
-}
-.story2 {
-  display: flex;
-  flex-direction: row-reverse; /* Bild kommt nach rechts */
-  align-items: center;
-  gap: 20px;
-  padding: 30px 10px 15px;
-  background-color: #BDCFAA;
-  flex-wrap: wrap; /* wichtig: erlaubt Umbruch auf Mobile */
-}
-
-.story-img {
-  width: 160px;        /* kleineres Bild */
-  height: 160px;
-  object-fit: cover;
-  border-radius: 12px;
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
-  flex-shrink: 0;      /* Bild bleibt in seiner Größe */
-}
-
-
-.story-text {
-  flex: 1;             /* Text nutzt restlichen Platz */
-  min-width: 240px;    /* verhindert zu enge Textspalte */
-  font-size: 16px;
-  line-height: 1.5;
-}
 
 /* ===== GET THE APP SECTION ===== */
 .getapp {
@@ -254,23 +220,6 @@ details[open] > summary .chevron {
   display: none; /* ausgeblendet auf Desktop */
 }
 
-/* QR-Code */
-.qrcode-img {
-  width: 200px;
-  height: auto;
-  display: block;
-  margin: 0 auto; 
-}
-
-
-/* App-Bild rechts */
-.getapp-img {
-  flex: 1;
-  max-width: 400px;
-  height: auto;
-  object-fit: contain;
-  margin: 1 auto; 
-}
 
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(-4px); }
@@ -397,6 +346,7 @@ details[open] > summary .chevron {
       justify-items: center;
       row-gap: 18px;
       padding: 20px 10px;
+      
     }
     .story1 .story-text, .story2 .story-text, .story3 .story-text {
       grid-area: text;
@@ -446,11 +396,6 @@ details[open] > summary .chevron {
       margin-top: 2vh;
     }
   
-    h2 {
-      font-size: clamp(1rem, 4.5vw, 1.5rem);
-      font-style: italic;
-      margin-top: 2vh;
-    }
 
     .contact-body, .about-body, .faq-body {
       text-align: center;
@@ -470,15 +415,7 @@ details[open] > summary .chevron {
     }
   
  
-  
-    .getapp-text h4 {
-      font-size: 40px;
-    }
 
-    .getapp-text p {
-      display: none;
-    }
-  
   /* Footer stapeln */
   .footer-content {
     flex-direction: column;
@@ -486,7 +423,7 @@ details[open] > summary .chevron {
   }
   .footer-links {
     flex-direction: column;
-    gap: 10px;
+
   }
 }
 
@@ -508,7 +445,6 @@ details[open] > summary .chevron {
      aber mit angenehmen Abständen */
   .story1, .story2, .story3 {
     display: flex;         /* Desktop-Layout beibehalten */
-    gap: 20px;
     align-items: center;
     text-align: left;
   }

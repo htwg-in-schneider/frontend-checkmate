@@ -2,6 +2,11 @@
 import Button from '@/components/Button.vue'
 import Navbar from '@/components/Navbar.vue'
 import Footer from '@/components/Footer.vue'
+import StoryCard from '@/components/StoryCard.vue';
+import studyImage from '@/assets/img/studygroup.png'
+import success1 from '@/assets/img/erfolgsgeschichte.png'
+import tutorin from '@/assets/img/tutorin.png'
+
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
@@ -11,7 +16,7 @@ function goToTutors() {
 }
 
 function showComingSoon() {
-  router.push('/coming-soon')
+  router.push('/login')
 }
 </script>
 
@@ -36,9 +41,6 @@ function showComingSoon() {
         Jetzt starten
       </button>
 
-      <Button variant="accent" :onClick="goToTutors">
-        Hier kommt ihr zu unseren Tutoren
-      </Button>
     </div>
 
     <div class="container section-list my-5">
@@ -91,6 +93,9 @@ function showComingSoon() {
             aus niedrigeren Semestern bei ihr, die Unterstützung in
             Mathe II und Thermodynamik suchten...
           </p>
+            <Button variant="accent" :onClick="goToTutors">
+        Hier kommt ihr zu unseren Tutoren
+      </Button>
         </div>
       </div>
 
@@ -107,8 +112,12 @@ function showComingSoon() {
             Was als spontane Lerngruppe für die Statistik-Klausur begann,
             wurde zu einer richtigen <strong>Study-Community</strong>...
           </p>
-        </div>
+          
+        </div>        
       </div>
+
+      
+
 
       <!-- ABOUT -->
       <details class="about">
@@ -188,7 +197,51 @@ h2 {
     font-weight: 700;
     color: #262424;
 }
-@media (max-width: 800px) {
+
+.story1, .story3{
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 30px 10px 15px;
+  background-color: #F3EFDF;
+  flex-wrap: wrap; /* wichtig: erlaubt Umbruch auf Mobile */
+   border-radius: 30px;
+  margin-bottom: 20px;
+}
+.story2 {
+  display: flex;
+  flex-direction: row-reverse; /* Bild kommt nach rechts */
+  align-items: center;
+  gap: 20px;
+  padding: 30px 10px 15px;
+  background-color: #BDCFAA;
+  flex-wrap: wrap; /* wichtig: erlaubt Umbruch auf Mobile */
+  border-radius: 30px;
+  margin-bottom: 20px;
+}
+
+.story-img {
+  width: 370px;        /* kleineres Bild */
+  height: 460px;
+  object-fit: cover;
+  border-radius: 12px;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;      /* Bild bleibt in seiner Größe */
+  margin: 19px;
+}
+h4{
+  font-size: 40px;
+}
+
+.story-text {
+  margin: 15px;
+  flex: 1;             /* Text nutzt restlichen Platz */
+  min-width: 240px;    /* verhindert zu enge Textspalte */
+  font-size: 22px;
+  line-height: 1.5;
+}
+
+@media (max-width: 760px) {
     h1 {
       font-size: clamp(1.8rem, 8vw, 2.8rem); /* kleiner, aber dynamisch */
       margin: 2vh;
@@ -200,7 +253,63 @@ h2 {
       margin-bottom: 1%;
       padding-bottom: 2%;
     }
+     h4 {
+    font-size: 25px;
+    }
+ 
+   
 
+.story-text {
+    transition: all 0.3s ease;
+    
+    font-size: 16px;
+  }
+
+        
+      
+    .story1 .story-img, .story2 .story-img, .story3 .story-img {
+      grid-area: img;
+      width: 350px;        /* kleineres Bild */
+      height: 260px;
+      aspect-ratio: 1 / 1;       /* optional: quadratisch */
+      margin:0px;
+    }
+}
+
+
+@media (max-width: 1000px) {
+    h1 {
+      font-size: clamp(1.8rem, 8vw, 2.8rem); /* kleiner, aber dynamisch */
+      margin: 2vh;
+    }
+  
+    h2 {
+      font-size: clamp(1rem, 4.5vw, 1.5rem);
+      font-style: italic;
+      margin-bottom: 1%;
+      padding-bottom: 2%;
+    }
+     h4 {
+    font-size: 25px;
+    }
+ 
+   
+
+.story-text {
+    transition: all 0.3s ease;
+    
+    font-size: 16px;
+  }
+
+        
+      
+    .story1 .story-img, .story2 .story-img, .story3 .story-img {
+      grid-area: img;
+      width: 350px;        /* kleineres Bild */
+      height: 260px;
+      aspect-ratio: 1 / 1;       /* optional: quadratisch */
+      margin:0px;
+    }
 }
 
 </style>

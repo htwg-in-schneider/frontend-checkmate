@@ -3,6 +3,8 @@ import { createRouter, createWebHistory } from 'vue-router';
 import Home from '@/views/Home.vue';
 import TutorCatalog from '../views/TutorCatalog.vue';
 import TutorDetail from '../views/TutorDetail.vue';
+import Login from '@/views/Logger.vue';
+import Register from '@/views/Register.vue';
 
 const routes = [
    {
@@ -15,6 +17,16 @@ const routes = [
   //  name: 'tutors',
   //  component: TutorCatalog,     // Seite mit Filter + TutorCards
  // },
+ {
+    path: '/login',
+    name: 'login',
+    component: Login
+  },
+  {
+    path: '/register',
+    name: 'register',
+    component: Register
+  },
   {
     path: '/tutor/:id',
     name: 'tutor',
