@@ -17,16 +17,36 @@ const routes = [
   //  name: 'tutors',
   //  component: TutorCatalog,     // Seite mit Filter + TutorCards
  // },
+ //{
+   // path: '/login',
+    //name: 'login',
+    //component: Login
+ // },
  {
-    path: '/login',
-    name: 'login',
-    component: Login
-  },
+  path: '/app',
+  name: 'AppRouter',
+  component: () => import('@/views/AppRouter.vue'),
+  meta: { requiresAuth: true }
+},
   {
     path: '/register',
     name: 'register',
     component: Register
   },
+  {
+  path: '/student',
+  name: 'StudentHome',
+  component: () => import('@/views/StudentHome.vue'),
+  meta: { requiresAuth: true }
+},
+{
+  path: '/tutor',
+  name: 'TutorHome',
+  component: () => import('@/views/TutorHome.vue'),
+  meta: { requiresAuth: true }
+},
+
+
   {
     path: '/tutor/:id',
     name: 'tutor',

@@ -13,7 +13,13 @@ const auth0 = createAuth0({
     authorizationParams: {
         audience: import.meta.env.VITE_AUTH0_AUDIENCE,
         redirect_uri: window.location.origin
-    }
+    },
+     // DAS ist der wichtige Teil:
+  onRedirectCallback: (appState) => {
+    router.push(appState?.target || '/')
+  },
+
+  cacheLocation: 'localstorage', // optional, hilft im Dev
 })
 
 createApp(App)

@@ -6,18 +6,22 @@ import StoryCard from '@/components/StoryCard.vue';
 import studyImage from '@/assets/img/studygroup.png'
 import success1 from '@/assets/img/erfolgsgeschichte.png'
 import tutorin from '@/assets/img/tutorin.png'
+import { useAuth0 } from '@auth0/auth0-vue'
 
 import { useRouter } from 'vue-router'
 
+const { loginWithRedirect } = useAuth0()
 const router = useRouter()
-
+function start() {
+  loginWithRedirect({
+  appState: { target: '/app' }
+})
+}
 function goToTutors() {
   router.push('/tutoren')
 }
 
-function showComingSoon() {
-  router.push('/login')
-}
+
 </script>
 
 <template>
@@ -37,9 +41,7 @@ function showComingSoon() {
 
     <!-- BUTTONS -->
     <div class="button-stack">
-      <button id="register" @click="showComingSoon">
-        Jetzt starten
-      </button>
+        <button id="register" @click="start">Jetzt starten</button>
 
     </div>
 

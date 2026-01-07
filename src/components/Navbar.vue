@@ -1,44 +1,60 @@
+
+<script setup>
+import logo from '@/assets/img/logoheader2.png'
+import { useAuth0 } from '@auth0/auth0-vue'
+
+const { loginWithRedirect, logout, isAuthenticated, isLoading } = useAuth0()
+
+const onLoginClick = () => {
+ loginWithRedirect({
+  appState: { target: '/app' }
+})
+}
+
+const onLogoutClick = () => {
+  logout({ logoutParams: { returnTo: window.location.origin } })
+}
+
+const toggleLanguage = () => {
+  const select = document.querySelector('.goog-te-combo')
+  if (select) {
+    const newValue = select.value === 'en' ? 'de' : 'en'
+    select.value = newValue
+    select.dispatchEvent(new Event('change'))
+  } else {
+    alert('Google Translate konnte noch nicht geladen werden. Bitte kurz warten.')
+  }
+}
+</script>
 <template>
   <div class="header">
-    <img
-      class="logo"
-      :src="logo"
-      alt="CheckMate Logo"
-    />
+    <img class="logo" :src="logo" alt="CheckMate Logo" />
+
     <div class="right-Side">
       <button id="lang" @click="toggleLanguage">
         <i class="fa-solid fa-globe"></i> Sprache
       </button>
-      <button id="sign" @click="onLoginClick">
+
+      <button
+        id="sign"
+        v-if="!isLoading && !isAuthenticated"
+        @click="onLoginClick"
+      >
         Einloggen
+      </button>
+
+      <button
+        id="sign"
+        v-else-if="!isLoading && isAuthenticated"
+        @click="onLogoutClick"
+      >
+        Abmelden
       </button>
     </div>
   </div>
 </template>
 
-<script setup>
-import logo from '@/assets/img/logoheader2.png';
 
-// Event, das an den Parent (App.vue) gesendet wird
-const emit = defineEmits(['open-tutor-list']);
-
-const onLoginClick = () => {
-  emit('open-tutor-list');
-};
-
-const toggleLanguage = () => {
-  const select = document.querySelector('.goog-te-combo');
-  if (select) {
-    const newValue = select.value === 'en' ? 'de' : 'en';
-    select.value = newValue;
-    select.dispatchEvent(new Event('change'));
-  } else {
-    alert(
-      'Google Translate konnte noch nicht geladen werden. Bitte kurz warten.'
-    );
-  }
-};
-</script>
 
 <style scoped>
  .header {
