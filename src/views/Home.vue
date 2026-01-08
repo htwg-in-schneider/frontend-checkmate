@@ -6,6 +6,7 @@ import StoryCard from '@/components/StoryCard.vue';
 import studyImage from '@/assets/img/studygroup.png'
 import success1 from '@/assets/img/erfolgsgeschichte.png'
 import tutorin from '@/assets/img/tutorin.png'
+import Contact from '@/components/Contact.vue'
 import { useAuth0 } from '@auth0/auth0-vue'
 
 import { useRouter } from 'vue-router'
@@ -144,7 +145,9 @@ function goToTutors() {
         <div class="contact-body">
           <p>
             Du hast Fragen, Feedback? Schreib uns:
-            <a href="mailto:hello@checkmate.app">hello@checkmate.app</a>
+             <section id="kontakt">
+              <Contact/>
+             </section>
           </p>
         </div>
       </details>

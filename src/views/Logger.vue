@@ -143,7 +143,7 @@ async function login() {
   padding-right:1.6rem ;
   border-radius: 30px;
   box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-  text-align: cente r;
+  text-align: center;
 }
 
 
