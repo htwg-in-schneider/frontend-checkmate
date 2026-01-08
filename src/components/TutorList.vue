@@ -4,6 +4,7 @@ import TutorCard from '@/components/TutorCard.vue'
 import TutorFilter from '@/components/TutorFilter.vue'
 import { useAuth0 } from '@auth0/auth0-vue'
 
+
 // Basis-URL – entweder aus .env oder fallback auf localhost
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081'
 
