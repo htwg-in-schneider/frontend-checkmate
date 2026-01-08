@@ -1,5 +1,6 @@
 <script setup>
 import TutorReviews from '@/components/TutorReviews.vue';
+import { useCartStore } from "@/stores/cart";
 
 const props = defineProps({
   tutor: {
@@ -9,6 +10,21 @@ const props = defineProps({
 });
 const emit = defineEmits(["deleted"]);
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
+
+
+const cart = useCartStore()
+
+function addLessonToCart() {
+  cart.add({
+    id: tutor.id, // reicht erstmal tutor.id als unique
+    title: `${tutor.subject} bei ${tutor.name}`,
+    tutorId: tutor.id,
+    tutorName: tutor.name,
+    subject: tutor.subject,
+    image: tutor.image,
+    price: 0, // optional
+  })
+}
 
 async function deleteTutor() {
    console.log("deleteTutor wurde aufgerufen!");
@@ -31,6 +47,11 @@ function contactTutor() {
 </script>
 
 <template>
+
+<button class="btn btn-success" @click="addLessonToCart">
+  Stunde buchen
+</button>
+
   <div class="card shadow-sm h-100">
    <div class="profile-img-wrapper">
   <img :src="tutor.image" alt="Tutor Bild" class="profile-img" />

@@ -3,6 +3,11 @@
 import logo from '@/assets/img/logoheader2.png'
 import { useAuth0 } from '@auth0/auth0-vue'
 
+import { useCartStore } from "@/stores/cart"
+import { computed } from "vue"
+import { useRouter } from "vue-router"
+
+
 const { loginWithRedirect, logout, isAuthenticated, isLoading } = useAuth0()
 
 const onLoginClick = () => {
@@ -25,8 +30,32 @@ const toggleLanguage = () => {
     alert('Google Translate konnte noch nicht geladen werden. Bitte kurz warten.')
   }
 }
+
+
+const cart = useCartStore()
+const router = useRouter()
+const cartCount = computed(() => cart.count)
+
+function goCheckout() {
+  router.push("/checkout")
+}
 </script>
 <template>
+<button id="cart" @click="goCheckout" style="position:relative;">
+  🛒
+  <span
+    v-if="cartCount > 0"
+    style="
+      position:absolute; top:-6px; right:-10px;
+      background:red; color:white;
+      border-radius:999px; padding:2px 6px;
+      font-size:12px;
+    "
+  >
+    {{ cartCount }}
+  </span>
+</button>
+
   <div class="header">
     <img class="logo" :src="logo" alt="CheckMate Logo" />
 
