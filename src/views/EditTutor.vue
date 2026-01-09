@@ -2,10 +2,11 @@
 import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import Button from '@/components/Button.vue';
+import { useAuth0 } from '@auth0/auth0-vue'
 
 const route = useRoute();
 const router = useRouter();
-
+const { getAccessTokenSilently } = useAuth0()
 // Backend-Endpoint für einen einzelnen Tutor
 //const url = 'http://localhost:8081/api/tutors';
 const url = `${import.meta.env.VITE_API_BASE_URL}/api/tutors`;
@@ -32,43 +33,50 @@ async function fetchTutor() {
 
 async function updateTutor() {
   try {
+    const token = await getAccessTokenSilently()
+
     const response = await fetch(`${url}/${tutor.value.id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
       body: JSON.stringify(tutor.value),
-    });
+    })
 
     if (!response.ok) {
-      throw new Error(`Fehler beim Aktualisieren: ${response.status}`);
+      const txt = await response.text().catch(() => '')
+      throw new Error(`Fehler beim Aktualisieren: ${response.status} ${txt}`)
     }
 
-   // alert('Tutor erfolgreich aktualisiert!');
-    router.push('/tutoren');
+    router.push('/tutoren')
   } catch (error) {
-    console.error('Fehler beim Aktualisieren des Tutors:', error);
-    alert('Tutor konnte nicht aktualisiert werden.');
+    console.error('Fehler beim Aktualisieren des Tutors:', error)
+    alert('Tutor konnte nicht aktualisiert werden.')
   }
 }
-
 async function deleteTutor() {
-  //if (!confirm('Möchtest du diesen Tutor wirklich löschen?')) return;
-
   try {
+    const token = await getAccessTokenSilently()
+
     const response = await fetch(`${url}/${tutor.value.id}`, {
       method: 'DELETE',
-    });
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
 
     if (!response.ok) {
-      throw new Error(`Fehler beim Löschen: ${response.status}`);
+      const txt = await response.text().catch(() => '')
+      throw new Error(`Fehler beim Löschen: ${response.status} ${txt}`)
     }
 
-    //alert('Tutor erfolgreich gelöscht!');
-    router.push('/tutoren');
+    router.push('/tutoren')
   } catch (error) {
-    console.error('Fehler beim Löschen des Tutors:', error);
-    //alert('Tutor konnte nicht gelöscht werden.');
+    console.error('Fehler beim Löschen des Tutors:', error)
   }
 }
+
 </script>
 
 <template>

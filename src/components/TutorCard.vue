@@ -1,17 +1,23 @@
 <script setup>
 import TutorReviews from '@/components/TutorReviews.vue';
 import { useCartStore } from "@/stores/cart";
+import { useAuth0 } from '@auth0/auth0-vue'
+
 
 const props = defineProps({
   tutor: {
     type: Object,
     required: true,
   },
+  isAdmin: {
+    type: Boolean,
+    default: false 
+  },
 });
 const emit = defineEmits(["deleted"]);
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
-
+const { getAccessTokenSilently, isAuthenticated } = useAuth0() // ✅ für Token beim Delete
 const cart = useCartStore()
 
 function addLessonToCart() {
@@ -31,10 +37,14 @@ async function deleteTutor() {
 
   //const ok = confirm(`Willst du ${props.tutor.name} wirklich löschen?`);
   //if (!ok) return;
+  const token = await getAccessTokenSilently()
 
   const response = await fetch(`${API_BASE}/api/tutors/${props.tutor.id}`, {
     method: "DELETE",
-  });d
+    headers: {
+      Authorization: `Bearer ${token}`,        
+    },
+  });
 
 
   emit("deleted", props.tutor.id);
@@ -72,12 +82,14 @@ function contactTutor() {
   Kontaktieren
 </button>
 <button
+  v-if="isAuthenticated && isAdmin"
   class="btn btn-warning w-100 mt-2"
   @click="$router.push(`/tutor/${tutor.id}/edit`)"
 >
   Bearbeiten
 </button>
 <button
+  v-if="isAuthenticated && isAdmin"
   class="btn btn-danger w-100 mt-2"
   @click="deleteTutor"
 >

@@ -59,6 +59,11 @@ async function loadBackendProfile() {
     const profile = await res.json()
     backendProfile.value = profile
     isAdmin.value = profile?.role === 'ADMIN'
+
+    // 🔍 DEBUG
+    console.log('BACKEND PROFILE:', profile)
+    console.log('ROLE FROM BACKEND:', profile?.role)
+    console.log('isAdmin (Parent):', isAdmin.value)
   } catch (e) {
     console.error('Could not load backend profile:', e)
     backendProfile.value = null
@@ -186,7 +191,10 @@ function handleTutorDeleted(id) {
 
       <div v-else class="row g-4">
         <div v-for="tutor in filteredTutors" :key="tutor.id" class="col-md-4">
-          <TutorCard :tutor="tutor" @deleted="handleTutorDeleted" />
+          <TutorCard 
+          :tutor="tutor"   
+          :is-admin="isAdmin"
+          @deleted="handleTutorDeleted" />
         </div>
 
         <p v-if="!filteredTutors.length && !loading" class="text-center mt-4">
