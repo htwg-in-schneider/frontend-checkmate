@@ -6,6 +6,7 @@ import StoryCard from '@/components/StoryCard.vue';
 import studyImage from '@/assets/img/studygroup.png'
 import success1 from '@/assets/img/erfolgsgeschichte.png'
 import tutorin from '@/assets/img/tutorin.png'
+import Contact from '@/components/Contact.vue'
 import { useAuth0 } from '@auth0/auth0-vue'
 
 import { useRouter } from 'vue-router'
@@ -129,8 +130,14 @@ function goToTutors() {
         </summary>
         <div class="about-body">
           <p>
-            <strong>CheckMate</strong> ist mehr als nur eine Plattform –
-            es ist eine kleine Community von Studierenden...
+            <h1>Impressum</h1>
+<h2 id="m46">Diensteanbieter</h2>
+<p>CheckMate</p>
+<p>Brandesstraße</p>
+
+<h2 id="m56">Kontaktmöglichkeiten</h2><p>E-Mail-Adresse: <a href="mailto:thanhhiendang521@gmail.com">thanhhiendang521@gmail.com</a></p>
+
+<p class="seal"><a href="https://datenschutz-generator.de/" title="Rechtstext von Dr. Schwenke - für weitere Informationen bitte anklicken." target="_blank" rel="noopener noreferrer nofollow">Erstellt mit kostenlosem Datenschutz-Generator.de von Dr. Thomas Schwenke</a></p>.
           </p>
         </div>
       </details>
@@ -144,7 +151,9 @@ function goToTutors() {
         <div class="contact-body">
           <p>
             Du hast Fragen, Feedback? Schreib uns:
-            <a href="mailto:hello@checkmate.app">hello@checkmate.app</a>
+             <section id="kontakt">
+              <Contact/>
+             </section>
           </p>
         </div>
       </details>
