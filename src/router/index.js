@@ -1,51 +1,44 @@
-import { createRouter, createWebHistory } from 'vue-router';
+import { createRouter, createWebHistory } from 'vue-router'
 
-import Home from '@/views/Home.vue';
-import TutorCatalog from '../views/TutorCatalog.vue';
-import TutorDetail from '../views/TutorDetail.vue';
-import Login from '@/views/Logger.vue';
-import Register from '@/views/Register.vue';
+import Home from '@/views/Home.vue'
+import TutorDetail from '@/views/TutorDetail.vue'
+import Register from '@/views/Register.vue'
+
+import { authGuard } from '@auth0/auth0-vue'
 
 const routes = [
-   {
+  {
     path: '/',
     name: 'home',
-    component: Home
+    component: Home,
   },
- // {
-  //  path: '/tutors',
-  //  name: 'tutors',
-  //  component: TutorCatalog,     // Seite mit Filter + TutorCards
- // },
- //{
-   // path: '/login',
-    //name: 'login',
-    //component: Login
- // },
- {
-  path: '/app',
-  name: 'AppRouter',
-  component: () => import('@/views/AppRouter.vue'),
-  meta: { requiresAuth: true }
-},
+
+  {
+    path: '/app',
+    name: 'AppRouter',
+    component: () => import('@/views/AppRouter.vue'),
+    beforeEnter: authGuard,
+  },
+
   {
     path: '/register',
     name: 'register',
-    component: Register
+    component: Register,
   },
-  {
-  path: '/student',
-  name: 'StudentHome',
-  component: () => import('@/views/StudentHome.vue'),
-  meta: { requiresAuth: true }
-},
-{
-  path: '/tutor',
-  name: 'TutorHome',
-  component: () => import('@/views/TutorHome.vue'),
-  meta: { requiresAuth: true }
-},
 
+  {
+    path: '/student',
+    name: 'StudentHome',
+    component: () => import('@/views/StudentHome.vue'),
+    beforeEnter: authGuard,
+  },
+
+  {
+    path: '/tutor',
+    name: 'TutorHome',
+    component: () => import('@/views/TutorHome.vue'),
+    beforeEnter: authGuard,
+  },
 
   {
     path: '/tutor/:id',
@@ -53,24 +46,37 @@ const routes = [
     component: TutorDetail,
     props: true,
   },
+
   {
-  path: '/tutoren',
-  name: 'TutorList',
-  component: () => import('@/components/TutorList.vue')
+    path: '/tutoren',
+    name: 'TutorList',
+    component: () => import('@/components/TutorList.vue'),
+  },
+
+  {
+    path: '/tutor/:id/edit',
+    name: 'editTutor',
+    component: () => import('@/views/EditTutor.vue'),
+    props: true,
+    beforeEnter: authGuard,
+  }, // ✅ WICHTIG: Komma
+
+  {
+    path: '/profile',
+    name: 'profile',
+    component: () => import('@/views/Profile.vue'),
+    beforeEnter: authGuard,
   },
   {
-  path: '/tutor/:id/edit',
-  name: 'editTutor',
-  component: () => import('@/views/EditTutor.vue'),
-  props: true
-}
-
-
-];
+    path: "/checkout",
+    name: "checkout",
+    component: () => import("@/views/CheckoutView.vue"),
+  }
+]
 
 const router = createRouter({
   history: createWebHistory(),
   routes,
-});
+})
 
-export default router;
+export default router

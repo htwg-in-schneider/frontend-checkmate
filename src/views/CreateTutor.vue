@@ -1,98 +1,296 @@
 <script setup>
-import { ref } from 'vue';
-import { useRouter } from 'vue-router';
-import Button from '@/components/Button.vue';
+import { ref, onMounted, computed } from 'vue'
+import TutorCard from '@/components/TutorCard.vue'
+import TutorFilter from '@/components/TutorFilter.vue'
+import { useAuth0 } from '@auth0/auth0-vue'
 
-const router = useRouter();
+// Basis-URL – entweder aus .env oder fallback auf localhost
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081'
 
-// Dein Tutor-Endpunkt:
-const url = 'http://localhost:8081/api/tutors';
+// Auth0
+const { getAccessTokenSilently, isAuthenticated, isLoading } = useAuth0()
 
-// Tutor-Objekt (muss exakt die Felder des Backends haben)
-const tutor = ref({
-  name: '',
-  subject: '',
+// State
+const tutors = ref([])
+const categories = ref([])
+const loading = ref(true)
+const error = ref(null)
+
+// Role / Profile
+const backendProfile = ref(null)
+const isAdmin = ref(false)
+
+// Filter-States (werden vom Child gesetzt)
+const searchName = ref('')
+const selectedCategory = ref('') // "" = keine Kategorie → alle anzeigen
+
+const showCreateForm = ref(false)
+const newTutor = ref({
+  name: "",
+  subject: "",
   semester: 1,
-  image: ''
-});
+  image: "",
+  // wenn dein Backend category erwartet, musst du das hier ergänzen:
+  // category: ""
+})
+
+// Daten laden, sobald Komponente gemountet ist
+onMounted(async () => {
+  await Promise.all([fetchTutors(), fetchCategories()])
+
+  // Nur wenn eingeloggt: Backend Profile laden (für Admin-UI)
+  if (isAuthenticated.value) {
+    await loadBackendProfile()
+  }
+})
+
+async function loadBackendProfile() {
+  try {
+    const token = await getAccessTokenSilently()
+
+    const res = await fetch(`${API_BASE}/api/profile`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+
+    if (!res.ok) {
+      const txt = await res.text().catch(() => "")
+      throw new Error(`Profile load failed: ${res.status} ${txt}`)
+    }
+
+    const profile = await res.json()
+    backendProfile.value = profile
+
+    // Erwartung: profile.role = "ADMIN" oder "STUDENT" etc.
+    isAdmin.value = profile?.role === 'ADMIN'
+  } catch (e) {
+    console.error("Could not load backend profile:", e)
+    backendProfile.value = null
+    isAdmin.value = false
+  }
+}
 
 async function createTutor() {
   try {
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(tutor.value),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Fehler beim Erstellen: ${response.status}`);
+    // Guard: nur Admin
+    if (!isAdmin.value) {
+      alert("Nur Admins dürfen Tutor:innen erstellen.")
+      return
     }
 
-    alert('Tutor erfolgreich erstellt!');
-    router.push('/tutors'); // oder '/', wenn du willst
-  } catch (error) {
-    console.error('Fehler beim Erstellen des Tutors:', error);
-    alert('Tutor konnte nicht erstellt werden.');
+    const token = await getAccessTokenSilently()
+
+    const response = await fetch(`${API_BASE}/api/tutors`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(newTutor.value),
+    })
+
+    if (!response.ok) {
+      const txt = await response.text().catch(() => "")
+      throw new Error(`Error creating tutor: ${response.status} ${txt}`)
+    }
+
+    // Tutor Liste neu laden + Modal schließen + reset
+    await fetchTutors()
+    showCreateForm.value = false
+    newTutor.value = { name: "", subject: "", semester: 1, image: "" }
+  } catch (e) {
+    console.error(e)
+    alert("Tutor konnte nicht erstellt werden.")
   }
+}
+
+// Tutor:innen vom Backend holen
+async function fetchTutors() {
+  loading.value = true
+  error.value = null
+  try {
+    const res = await fetch(`${API_BASE}/api/tutors`)
+    if (!res.ok) throw new Error(`HTTP-Fehler: ${res.status}`)
+    tutors.value = await res.json()
+  } catch (err) {
+    console.error('Fehler beim Laden der Tutor:innen:', err)
+    error.value = 'Fehler beim Laden der Tutor:innen.'
+  } finally {
+    loading.value = false
+  }
+}
+
+// Kategorien aus dem Backend holen
+async function fetchCategories() {
+  try {
+    const res = await fetch(`${API_BASE}/api/category`)
+    if (!res.ok) throw new Error(`HTTP-Fehler Kategorien: ${res.status}`)
+    categories.value = await res.json()
+  } catch (err) {
+    console.error('Fehler beim Laden der Kategorien:', err)
+  }
+}
+
+// gefilterte Liste (Name + Kategorie)
+const filteredTutors = computed(() => {
+  if (!searchName.value && !selectedCategory.value) return tutors.value
+
+  return tutors.value.filter((tutor) => {
+    const nameMatches =
+      !searchName.value ||
+      (tutor.name || '').toLowerCase().includes(searchName.value.toLowerCase())
+
+    const categoryMatches =
+      !selectedCategory.value || tutor.category === selectedCategory.value
+
+    return nameMatches && categoryMatches
+  })
+})
+
+// Event-Handler vom Child TutorFilter
+function handleTutorUpdate({ name, subject }) {
+  searchName.value = name
+  selectedCategory.value = subject
+}
+
+function handleTutorDeleted(id) {
+  tutors.value = tutors.value.filter(t => t.id !== id)
 }
 </script>
 
 <template>
-  <div class="container py-5">
-    <h2 class="fw-bold mb-4">Neuen Tutor erstellen</h2>
+  <div class="tutor-page">
+    <div class="container py-4 tutorlist">
 
-    <form @submit.prevent="createTutor">
-      <div class="mb-3">
-        <label for="tutorName" class="form-label">Name</label>
-        <input
-          type="text"
-          id="tutorName"
-          class="form-control"
-          v-model="tutor.name"
-          required
-        />
+      <div class="tutor-header-container">
+        <div class="filter-top-right">
+          <div class="filter-clean">
+            <TutorFilter
+              :subjects="categories"
+              @tutorUpdate="handleTutorUpdate"
+            />
+          </div>
+        </div>
+
+        <h1 class="tutor-title">Unsere Tutor:innen</h1>
       </div>
 
-      <div class="mb-3">
-        <label for="tutorSubject" class="form-label">Fach</label>
-        <input
-          type="text"
-          id="tutorSubject"
-          class="form-control"
-          v-model="tutor.subject"
-          required
-        />
+      <!-- ✅ Button nur für Admin -->
+      <div class="text-end mb-3" v-if="!isLoading && isAuthenticated && isAdmin">
+        <button class="btn btn-success" @click="showCreateForm = true">
+          + Tutor erstellen
+        </button>
       </div>
 
-      <div class="mb-3">
-        <label for="tutorSemester" class="form-label">Semester</label>
-        <input
-          type="number"
-          id="tutorSemester"
-          class="form-control"
-          v-model="tutor.semester"
-          min="1"
-          required
-        />
+      <!-- Optional: Hinweis wenn eingeloggt aber kein Admin -->
+      <p class="text-end text-light" v-else-if="!isLoading && isAuthenticated && !isAdmin">
+        (Nur Admins können Tutor:innen erstellen.)
+      </p>
+
+      <p v-if="loading" class="text-center">Lade Tutor:innen…</p>
+      <p v-else-if="error" class="text-center text-danger">{{ error }}</p>
+
+      <div v-else class="row g-4">
+        <div v-for="tutor in filteredTutors" :key="tutor.id" class="col-md-4">
+          <TutorCard :tutor="tutor" @deleted="handleTutorDeleted" />
+        </div>
+
+        <p v-if="!filteredTutors.length && !loading" class="text-center mt-4">
+          Keine Tutor:innen gefunden. Passe Suche oder Kategorie an.
+        </p>
       </div>
 
-      <div class="mb-3">
-        <label for="tutorImage" class="form-label">Bild-URL</label>
-        <input
-          type="text"
-          id="tutorImage"
-          class="form-control"
-          v-model="tutor.image"
-        />
+      <div class="text-center mt-5">
+        <button class="btn btn-outline-secondary" @click="$router.push('/')">
+          Zurück zur Startseite
+        </button>
       </div>
+    </div>
+  </div>
 
-      <Button type="submit" variant="accent">Erstellen</Button>
-    </form>
+  <!-- ✅ Modal nur für Admin -->
+  <div v-if="showCreateForm && !isLoading && isAuthenticated && isAdmin" class="modal-backdrop">
+    <div class="modal-content">
+      <h3>Neuen Tutor erstellen</h3>
+
+      <input v-model="newTutor.name" class="form-control mb-2" placeholder="Name" />
+      <input v-model="newTutor.subject" class="form-control mb-2" placeholder="Fach" />
+      <input v-model="newTutor.semester" type="number" class="form-control mb-2" placeholder="Semester" />
+      <input v-model="newTutor.image" class="form-control mb-2" placeholder="Bild-URL" />
+
+      <div class="d-flex gap-2 mt-3">
+        <button class="btn btn-success" @click="createTutor">Erstellen</button>
+        <button class="btn btn-secondary" @click="showCreateForm = false">Abbrechen</button>
+      </div>
+    </div>
   </div>
 </template>
 
 <style scoped>
-.container {
-  max-width: 600px;
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-content {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  width: 400px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+}
+
+.tutor-page {
+  min-height: 100vh;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.75)),
+    url('@/assets/img/background.avif');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  padding-top: 4rem;
+  padding-bottom: 4rem;
+}
+
+.tutor-header-container {
+  position: relative;
+  margin-bottom: 2rem;
+}
+
+.tutor-title {
+  font-family: sans-serif;
+  font-size: 80px;
+  font-weight: 600;
+  color: white !important;
+  letter-spacing: 0.8px;
+  text-align: left;
+  text-shadow: 0 0 12px #607953;
+}
+
+.filter-top-right {
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+
+.filter-clean ::v-deep .tutor-filter-box {
+  border: none !important;
+  background: transparent !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+@media (max-width: 576px) {
+  .tutor-page { padding-top: 2rem; }
+  .filter-top-right {
+    position: static;
+    margin-bottom: 1rem;
+    display: flex;
+    justify-content: flex-start;
+  }
+  .tutor-title { margin-top: 0; }
 }
 </style>
