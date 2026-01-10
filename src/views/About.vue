@@ -1,6 +1,6 @@
 <template>
   <div class="container py-5">
-    <h3 class="mb-4">Über uns ♟️✨</h3>
+    <h1 class="mb-4">Über uns</h1>
 
     <p>
       Lernen muss nicht einsam, stressig oder kompliziert sein – und genau deshalb gibt es

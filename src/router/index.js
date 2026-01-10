@@ -8,6 +8,7 @@ import Impressum from "@/views/Impressum.vue"
 import Contact from "@/views/Contact.vue"
 import About from "@/views/About.vue"
 import FAQ from "@/views/FAQ.vue"
+import Datenschutz from "@/views/Datenschutz.vue"
 
 
 const routes = [
@@ -99,6 +100,12 @@ const routes = [
   path: "/faq",
   name: "faq",
   component: FAQ
+},
+
+{
+  path: "/datenschutz",
+  name: "datenschutz",
+  component: Datenschutz
 }
 
 ]

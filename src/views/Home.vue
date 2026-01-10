@@ -1,7 +1,7 @@
 <script setup>
 import Button from '@/components/Button.vue'
-import Navbar from '@/components/Navbar.vue'
-import Footer from '@/components/Footer.vue'
+//import Navbar from '@/components/Navbar.vue'
+//import Footer from '@/components/Footer.vue'
 import StoryCard from '@/components/StoryCard.vue';
 import studyImage from '@/assets/img/studygroup.png'
 import success1 from '@/assets/img/erfolgsgeschichte.png'
@@ -46,7 +46,7 @@ function goToTutors() {
 
     </div>
 
-    <div class="container section-list my-5">
+    <div class="container section-list my-5 ">
 
       <!-- ERFOLGSGESCHICHTE 1 -->
       <div class="story1">
@@ -194,10 +194,6 @@ function goToTutors() {
           </p>
         </div>
       </details>
-
-      <!-- FOOTER -->
-      <Footer />
-
     </div>
   </div>
 </template>
@@ -210,8 +206,9 @@ function goToTutors() {
   align-items: center;
 }
 #home {
-  background-color:  #697C44; /* Oder was du willst */
+  background: #697C44;
   min-height: 100vh;
+  padding-bottom: 1rem; /* damit unten Luft ist, aber grün */
 }
 
 h1 {

@@ -11,7 +11,7 @@ import FooterLink from './FooterLink.vue';
 
       <!-- Links: jetzt mit FooterLink-Komponente -->
       <nav class="footer-links">
-        <FooterLink text="About" label="Über uns" href="/about" />
+        <FooterLink text="About us" label="Über uns" href="/about" />
         <span aria-hidden="true" class="divider">|</span>
 
         <FooterLink text="FAQ" label="FAQ" href="/faq" />
@@ -21,7 +21,12 @@ import FooterLink from './FooterLink.vue';
         <span aria-hidden="true" class="divider">|</span>
 
         <FooterLink text="Impressum" label="Impressum" href="/impressum" />
+        <span aria-hidden="true" class="divider">|</span>
+
+        <FooterLink text="Datenschutzerklärung" label="Datenschutz" href="/datenschutz" />
+
       </nav>
+
 
       <!-- Social Icons – ebenfalls mit FooterLink-Komponente -->
       <div class="footer-socials">

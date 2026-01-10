@@ -44,7 +44,9 @@ function goCheckout() {
  
 
   <div class="header">
+  <router-link to="/" class="logo">
     <img class="logo" :src="logo" alt="CheckMate Logo" />
+    </router-link>
 
     <div class="right-Side">
       <button id="lang" @click="toggleLanguage">
