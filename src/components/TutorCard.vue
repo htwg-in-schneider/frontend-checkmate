@@ -3,18 +3,13 @@ import TutorReviews from '@/components/TutorReviews.vue';
 import { useCartStore } from "@/stores/cart";
 import { useAuth0 } from '@auth0/auth0-vue'
 
+const props = defineProps({ tutor: Object })
+const emit = defineEmits(["book"])
 
-const props = defineProps({
-  tutor: {
-    type: Object,
-    required: true,
-  },
-  isAdmin: {
-    type: Boolean,
-    default: false 
-  },
-});
-const emit = defineEmits(["deleted"]);
+function onBookClick() {
+  emit("book", props.tutor)   // ✅ hier KEIN "tutor" sondern props.tutor
+}
+
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const { getAccessTokenSilently, isAuthenticated } = useAuth0() // ✅ für Token beim Delete
@@ -58,9 +53,6 @@ function contactTutor() {
 
 <template>
 
-<button class="btn btn-success" @click="addLessonToCart">
-  Stunde buchen
-</button>
 
   <div class="card shadow-sm h-100">
    <div class="profile-img-wrapper">
@@ -71,6 +63,17 @@ function contactTutor() {
       <h5 class="card-title">{{ tutor.name }}</h5>
       <p class="card-text">{{ tutor.subject }}</p>
       <p class="text-muted small">Semester: {{ tutor.semester }}</p>
+      <p v-if="tutor.hourlyRate">
+      Preis: <strong>{{ tutor.hourlyRate }} € / Stunde</strong>
+    </p>
+
+     <button
+        v-if="!isLoading && isAuthenticated"
+        class="btn btn-success"
+        @click="onBookClick"
+      >
+        Stunde buchen
+      </button>
 
       <!-- ⭐ Reviews direkt unter den Basisinfos -->
       <TutorReviews :tutor-id="tutor.id" />

@@ -1,10 +1,13 @@
 import { createRouter, createWebHistory } from 'vue-router'
-
 import Home from '@/views/Home.vue'
 import TutorDetail from '@/views/TutorDetail.vue'
 import Register from '@/views/Register.vue'
-
 import { authGuard } from '@auth0/auth0-vue'
+import Checkout from "@/views/Checkout.vue"
+import Impressum from "@/views/Impressum.vue"
+import Contact from "@/views/Contact.vue"
+import AboutView from "@/views/About.vue"
+
 
 const routes = [
   {
@@ -59,7 +62,7 @@ const routes = [
     component: () => import('@/views/EditTutor.vue'),
     props: true,
     beforeEnter: authGuard,
-  }, // ✅ WICHTIG: Komma
+  },
 
   {
     path: '/profile',
@@ -70,8 +73,27 @@ const routes = [
   {
     path: "/checkout",
     name: "checkout",
-    component: () => import("@/views/CheckoutView.vue"),
-  }
+    component: Checkout,
+  },
+
+
+{
+  path: "/impressum",
+  name: "impressum",
+  component: Impressum
+},
+{
+  path: '/contact',
+  name: 'contact',
+  component: Contact
+},
+
+{
+  path: "/about",
+  name: "about",
+  component: AboutView
+}
+
 ]
 
 const router = createRouter({

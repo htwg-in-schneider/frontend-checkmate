@@ -17,7 +17,7 @@ import FooterLink from './FooterLink.vue';
         <FooterLink text="FAQ" label="FAQ" href="/faq" />
         <span aria-hidden="true" class="divider">|</span>
 
-        <FooterLink text="Kontakt" label="Kontakt" href="/#kontakt" />
+        <FooterLink text="Kontakt" label="Kontakt" href="/contact" />
         <span aria-hidden="true" class="divider">|</span>
 
         <FooterLink text="Impressum" label="Impressum" href="/impressum" />

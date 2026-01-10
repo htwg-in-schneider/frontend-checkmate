@@ -1,62 +1,67 @@
 import { defineStore } from "pinia"
 
-const KEY = "checkmate_cart_v1"
+const LS_KEY = "checkmate_cart_v1"
 
-function load() {
+function loadFromLS() {
   try {
-    return JSON.parse(localStorage.getItem(KEY) || "[]")
+    const raw = localStorage.getItem(LS_KEY)
+    return raw ? JSON.parse(raw) : { items: [] }
   } catch {
-    return []
+    return { items: [] }
   }
+}
+
+function saveToLS(state) {
+  localStorage.setItem(LS_KEY, JSON.stringify({ items: state.items }))
 }
 
 export const useCartStore = defineStore("cart", {
   state: () => ({
-    items: load(),
+    items: loadFromLS().items, // Array of booking-drafts
   }),
 
   getters: {
-    count: (s) => s.items.reduce((sum, i) => sum + i.qty, 0),
-    total: (s) => s.items.reduce((sum, i) => sum + (i.price ?? 0) * i.qty, 0),
+    count: (s) => s.items.reduce((sum, it) => sum + (it.qty ?? 1), 0),
+    total: (s) =>
+      s.items.reduce((sum, it) => sum + (Number(it.priceTotal) || 0) * (it.qty ?? 1), 0),
   },
 
   actions: {
-    persist() {
-      localStorage.setItem(KEY, JSON.stringify(this.items))
+    addBooking(draft) {
+      // Wenn gleicher Tutor + gleicher Termin + gleiche Dauer -> qty erhöhen
+      const key = `${draft.tutorId}|${draft.startAt}|${draft.durationMinutes}`
+      const existing = this.items.find((x) => x.key === key)
+
+      if (existing) {
+        existing.qty = (existing.qty ?? 1) + 1
+      } else {
+        this.items.push({ ...draft, key, qty: 1 })
+      }
+      saveToLS(this.$state)
     },
 
-    add(lesson) {
-      // lesson = { id, title, tutorId, tutorName, subject, image?, price? }
-      const existing = this.items.find((x) => x.id === lesson.id)
-      if (existing) existing.qty += 1
-      else this.items.push({ ...lesson, qty: 1 })
-
-      this.persist()
+    inc(key) {
+      const it = this.items.find((x) => x.key === key)
+      if (it) it.qty = (it.qty ?? 1) + 1
+      saveToLS(this.$state)
     },
 
-    inc(id) {
-      const it = this.items.find((x) => x.id === id)
+    dec(key) {
+      const it = this.items.find((x) => x.key === key)
       if (!it) return
-      it.qty += 1
-      this.persist()
+      it.qty = (it.qty ?? 1) - 1
+      if (it.qty <= 0) this.items = this.items.filter((x) => x.key !== key)
+      saveToLS(this.$state)
     },
 
-    dec(id) {
-      const it = this.items.find((x) => x.id === id)
-      if (!it) return
-      it.qty -= 1
-      if (it.qty <= 0) this.items = this.items.filter((x) => x.id !== id)
-      this.persist()
-    },
-
-    remove(id) {
-      this.items = this.items.filter((x) => x.id !== id)
-      this.persist()
+    remove(key) {
+      this.items = this.items.filter((x) => x.key !== key)
+      saveToLS(this.$state)
     },
 
     clear() {
       this.items = []
-      this.persist()
+      saveToLS(this.$state)
     },
   },
 })

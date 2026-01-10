@@ -41,20 +41,7 @@ function goCheckout() {
 }
 </script>
 <template>
-<button id="cart" @click="goCheckout" style="position:relative;">
-  🛒
-  <span
-    v-if="cartCount > 0"
-    style="
-      position:absolute; top:-6px; right:-10px;
-      background:red; color:white;
-      border-radius:999px; padding:2px 6px;
-      font-size:12px;
-    "
-  >
-    {{ cartCount }}
-  </span>
-</button>
+ 
 
   <div class="header">
     <img class="logo" :src="logo" alt="CheckMate Logo" />
@@ -63,6 +50,15 @@ function goCheckout() {
       <button id="lang" @click="toggleLanguage">
         <i class="fa-solid fa-globe"></i> Sprache
       </button>
+
+<button
+  v-if="isAuthenticated"
+  class="nav-btn position-relative"
+  @click="router.push('/checkout')"
+>
+  🛒
+  <span v-if="cartCount > 0" class="cart-badge">{{ cartCount }}</span>
+</button>
 
       <button
         id="sign"
@@ -112,4 +108,17 @@ function goCheckout() {
     width: 55px;
   }
 }
+.nav-btn {
+  background-color: #c5bfb3;
+  color: #697C44;
+  border: none;
+  border-radius: 10px;
+  padding: 8px 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+
 </style>
