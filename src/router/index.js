@@ -6,7 +6,8 @@ import { authGuard } from '@auth0/auth0-vue'
 import Checkout from "@/views/Checkout.vue"
 import Impressum from "@/views/Impressum.vue"
 import Contact from "@/views/Contact.vue"
-import AboutView from "@/views/About.vue"
+import About from "@/views/About.vue"
+import FAQ from "@/views/FAQ.vue"
 
 
 const routes = [
@@ -91,7 +92,13 @@ const routes = [
 {
   path: "/about",
   name: "about",
-  component: AboutView
+  component: About
+},
+
+{
+  path: "/faq",
+  name: "faq",
+  component: FAQ
 }
 
 ]
