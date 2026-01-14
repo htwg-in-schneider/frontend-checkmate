@@ -3,6 +3,8 @@ import { ref, onMounted, computed } from 'vue'
 import TutorCard from '@/components/TutorCard.vue'
 import TutorFilter from '@/components/TutorFilter.vue'
 import { useAuth0 } from '@auth0/auth0-vue'
+import BackButton from '@/components/backButton.vue'
+
 
 
 // Basis-URL – entweder aus .env oder fallback auf localhost
@@ -163,13 +165,12 @@ function handleTutorDeleted(id) {
     <div class="container py-4 tutorlist">
 
       <div class="tutor-header-container">
-        <div class="filter-top-right">
-          <div class="filter-clean">
-            <TutorFilter :subjects="categories" @tutorUpdate="handleTutorUpdate" />
-          </div>
-        </div>
 
         <h1 class="tutor-title">Unsere Tutor:innen</h1>
+
+        <div class="filter-clean">
+            <TutorFilter :subjects="categories" @tutorUpdate="handleTutorUpdate" />
+          </div>
       </div>
 
       <!-- ✅ Create-Button nur für Admin -->
@@ -179,9 +180,6 @@ function handleTutorDeleted(id) {
         </button>
       </div>
 
-      <p class="text-end text-light" v-else-if="!isLoading && isAuthenticated && !isAdmin">
-        (Nur Admins können Tutor:innen erstellen.)
-      </p>
 
       <p v-if="loading" class="text-center">Lade Tutor:innen…</p>
       <p v-else-if="error" class="text-center text-danger">{{ error }}</p>
@@ -197,9 +195,7 @@ function handleTutorDeleted(id) {
       </div>
 
       <div class="text-center mt-5">
-        <button class="btn btn-outline-secondary" @click="$router.back()">
-          Zurück
-        </button>
+           <BackButton />
       </div>
     </div>
   </div>
@@ -233,23 +229,44 @@ function handleTutorDeleted(id) {
 }
 
 .modal-content {
-  background: white;
+  background: #F3EFDF;
   padding: 20px;
   border-radius: 12px;
   width: 400px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
 }
-
 .tutor-page {
+  
+
+  position: relative;
   min-height: 100vh;
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.75)),
-    url('@/assets/img/background.avif');
+  width: 100%;
+  overflow: hidden; /* Verhindert unschöne Ränder */
+}
+
+.tutor-page::before {
+  /* 1. Zwingend erforderlich, sonst wird das Element nicht erzeugt */
+  content: ""; 
+  
+  /* 2. Über die gesamte Fläche des Containers strecken */
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  
+  /* 3. Das Bild und seine Darstellung */
+  background-image: url('@/assets/img/matcha.jpg');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  padding-top: 4rem;
-  padding-bottom: 4rem;
+  background-attachment: fixed; /* Optional: Bild scrollt nicht mit */
+  
+  /* 4. Deckkraft wie gewünscht */
+  opacity: 0.3;
+  
+  /* 5. Hinter den Text und die Karten schieben */
+  z-index: -1;
 }
 
 .tutor-header-container {
@@ -267,22 +284,16 @@ function handleTutorDeleted(id) {
   text-shadow: 0 0 12px #607953;
 }
 
-.filter-top-right {
-  position: absolute;
-  top: 0;
-  right: 0;
-}
-
-.filter-clean ::v-deep .tutor-filter-box {
-  border: none !important;
-  background: transparent !important;
-  padding: 0 !important;
-  margin: 0 !important;
-}
 
 @media (max-width: 576px) {
   .tutor-page {
     padding-top: 2rem;
+  }
+
+  #h1 {
+
+    font-size: medium;
+
   }
 
   .filter-top-right {
@@ -294,6 +305,6 @@ function handleTutorDeleted(id) {
 
   .tutor-title {
     margin-top: 0;
-  }
+    font-size: 28px;  }
 }
 </style>

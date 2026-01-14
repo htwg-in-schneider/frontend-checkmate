@@ -104,6 +104,7 @@ function contactTutor() {
 .card {
   border-radius: 12px;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
+  background-color: #F3EFDF;
 }
 
 .card:hover {

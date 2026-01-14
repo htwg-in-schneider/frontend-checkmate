@@ -7,8 +7,10 @@ import { useCartStore } from "@/stores/cart"
 import { computed } from "vue"
 import { useRouter } from "vue-router"
 
+import { ref, onMounted } from 'vue';
 
-const { loginWithRedirect, logout, isAuthenticated, isLoading } = useAuth0()
+
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081';
 
 const onLoginClick = () => {
  loginWithRedirect({
@@ -19,6 +21,8 @@ const onLoginClick = () => {
 const onLogoutClick = () => {
   logout({ logoutParams: { returnTo: window.location.origin } })
 }
+
+
 
 const toggleLanguage = () => {
   const select = document.querySelector('.goog-te-combo')
@@ -36,6 +40,9 @@ const cart = useCartStore()
 const router = useRouter()
 const cartCount = computed(() => cart.count)
 
+// Ergänze 'user' in der Destrukturierung:
+const { loginWithRedirect, logout, isAuthenticated, isLoading, user } = useAuth0()
+
 function goCheckout() {
   router.push("/checkout")
 }
@@ -44,6 +51,22 @@ function goCheckout() {
 function goProfile() {
   router.push("/edit-profile") // Navigiert direkt zur Profilseite
 }
+
+function goHome() {
+  // Beispiel für ei
+  // nen Auth0-Rollen-Claim
+  const roles = user.value['https://checkmate.app/roles'] || [];
+  
+  if (roles.includes('student')) {
+    router.push('/student');
+  } else if (roles.includes('tutor')) {
+    router.push('/tutor');
+  } else {
+    router.push('/');
+  }
+
+}
+
 </script>
 <template>
 <button id="cart" @click="goCheckout" style="position:relative;">
@@ -66,14 +89,32 @@ function goProfile() {
 
     <div class="right-Side">
  
-
+   <div v-if="isAuthenticated" class="user-dropdown">
      <button 
-        id="profile-btn" 
-        v-if="isAuthenticated" 
-        @click="goProfile"
-      >
-        <i class="bi bi-person"></i>
-      </button>
+      id="profile-btn" 
+      v-if="isAuthenticated" 
+      @click="goProfile"
+      class="avatar-wrapper"
+>
+     <div class="avatar">
+       {{ (user?.name || user?.nickname || '?').slice(0, 1).toUpperCase() }}
+      </div>
+     </button>
+     <div class="dropdown-content">
+         
+     <button class="btn btn-outline-secondary px-4" @click="goHome">
+      Home
+    </button>
+
+<BackButton />
+          <button @click="goProfile">
+            <i class="bi bi-person"></i> Profil bearbeiten
+          </button>
+          <button @click="onLogoutClick" class="logout-item">
+            <i class="bi bi-box-arrow-right"></i> Abmelden
+          </button>
+        </div>
+      </div>
 
       <button
         id="sign"
@@ -83,13 +124,7 @@ function goProfile() {
         Einloggen
       </button>
 
-      <button
-        id="sign"
-        v-else-if="!isLoading && isAuthenticated"
-        @click="onLogoutClick"
-      >
-        Abmelden
-      </button>
+  
     </div>
   </div>
 </template>
@@ -98,27 +133,40 @@ function goProfile() {
 
 <style scoped>
  .header {
-  background: rgba(255, 255, 255, 0.35); /* Glass-Effekt */
+ 
   background-color: #697C44;
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
   padding: 0.7rem 1.5rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  position: sticky;
+  overflow: visible !important;
   top: 0;
-  z-index: 1000;
+  z-index: 1200;
 }
 /* Dein Profil-Button Style */
 #profile-btn {
-  background-color: grey;
-  color: white;
-  border: 1px solid white;
-  border-radius: 90px;
-  padding: 0.5rem 1rem;
+  background: none;
+  border: none;
+  padding: 0;
   cursor: pointer;
-  font-weight: 600;
-  transition: background 0.3s;
+}
+
+/* Die Avatar-Kreis-Logik */
+.avatar {
+  background-color: lightgray; /* Deine Farbe aus dem Tutor-Filter-Toggle */
+  border: 1px solid gray;
+  border-radius: 50%; /* Perfekt rund */
+  width: 50px;        /* Feste Breite */
+  height: 50px;       /* Feste Höhe */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 1.5rem;
+  transition: transform 0.2s;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  
 }
 
 /* Dropdown Logik */
@@ -128,15 +176,32 @@ function goProfile() {
 }
 
 .dropdown-content {
-  display: none; /* Standardmäßig versteckt */
-  position: absolute;
+  display: flex; 
+  flex-direction: column;
+  opacity: 0;
+  visibility: hidden;
+    position: absolute;
   right: 0;
+  top: 100%; 
   background-color: white;
-  min-width: 160px;
+  min-width: 180px;
   box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
-  z-index: 1001;
+  z-index: 1300;
   border-radius: 8px;
   margin-top: 5px;
+  overflow: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+  transition-delay: 0.1s; 
+}
+
+/* 2. Den Hover-Zustand anpassen */
+.user-dropdown:hover .dropdown-content {
+  opacity: 1;
+  visibility: visible;
+  
+  /* VERZÖGERUNG BEIM ÖFFNEN (Enter) */
+  /* Beim Drüberfahren soll es sofort (0s) erscheinen */
+  transition-delay: 0s;
 }
 
 .dropdown-content button {
@@ -148,15 +213,15 @@ function goProfile() {
   cursor: pointer;
   color: #333;
   font-size: 14px;
+  font-weight: bolder;
 }
 
 .dropdown-content button:hover {
   background-color: #f1f1f1;
 }
 
-/* Zeige Menü bei Hover über den Container */
 .user-dropdown:hover .dropdown-content {
-  display: block;
+  display: flex;
 }
 
 .logout-item {

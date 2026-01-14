@@ -69,7 +69,7 @@ function goBack() {
           :class="{ active: activeTab === 'matches' }"
           @click="activeTab = 'matches'"
         >
-          ✅ Matches ({{ matches.length }})
+          Matches ({{ matches.length }})
         </button>
 
         <button
@@ -135,14 +135,16 @@ function goBack() {
   padding: 2rem 1rem;
 }
 .container {
-  max-width: 560px;
+  max-width: 660px;
   margin: 0 auto;
 }
 .title {
   font-weight: 800;
-  margin-bottom: 0.2rem;
+  font-size: 60px;
+  margin-bottom: 4rem;
 }
 .subtitle {
+  font-size: 30px;
   margin-bottom: 1.2rem;
   color: rgba(0,0,0,0.65);
 }

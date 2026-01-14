@@ -22,7 +22,6 @@ function goMatches() {
 </script>
 
 <template>
-  <Navbar />
 
   <main class="page">
     <div class="cards">

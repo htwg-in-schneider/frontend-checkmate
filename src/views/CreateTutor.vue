@@ -162,14 +162,7 @@ function handleTutorDeleted(id) {
     <div class="container py-4 tutorlist">
 
       <div class="tutor-header-container">
-        <div class="filter-top-right">
-          <div class="filter-clean">
-            <TutorFilter
-              :subjects="categories"
-              @tutorUpdate="handleTutorUpdate"
-            />
-          </div>
-        </div>
+        
 
         <h1 class="tutor-title">Unsere Tutor:innen</h1>
       </div>

@@ -1,7 +1,9 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
+import Navbar from '@/components/Navbar.vue';
 import Footer from '@/components/Footer.vue';
 import TutorFilter from '@/components/TutorFilter.vue'; // kannst du wiederverwenden
+import BackButton from '@/components/backButton.vue'
 
 import { useAuth0 } from '@auth0/auth0-vue';
 
@@ -33,7 +35,15 @@ async function fetchStudents() {
   loading.value = true;
   error.value = null;
   try {
-    const response = await fetch(url);
+    // 1. Token holen
+    const token = await getAccessTokenSilently(); 
+
+    // 2. Token im Header mitschicken
+    const response = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -123,7 +133,7 @@ async function dislikeStudent(s) {
 </script>
 
 <template>
-  <Navbar />
+  <div class="studentSite">
 
   <!-- Header -->
   <section class="py-5 text-center">
@@ -134,6 +144,7 @@ async function dislikeStudent(s) {
   </section>
 
   <!-- Filter -->
+   
   <TutorFilter :subjects="availableSubjects" @tutorUpdate="handleStudentUpdate" />
 
   <div class="container py-4">
@@ -148,7 +159,6 @@ async function dislikeStudent(s) {
     v-if="currentStudent"
     :key="currentStudent.id"
     class="card shadow-sm"
-    style="max-width: 520px; width: 100%;"
   >
     <img :src="currentStudent.imageUrl || currentStudent.image"
          class="card-img-top"
@@ -183,12 +193,12 @@ async function dislikeStudent(s) {
         <div class="text-muted small">{{ currentStudent.university ?? '—' }}</div>
       </div>
 
-      <div class="mt-auto d-flex justify-content-between gap-3 pt-3">
-        <button class="btn btn-outline-danger w-50" @click="dislikeStudent(currentStudent)">
-          ❌
+      <div class="mt-auto d-flex justify-content-between gap-3 px-5 pt-3">
+        <button class="btn btn-danger btn-round" @click="dislikeStudent(currentStudent)">
+          <i class="bi bi-x"></i>
         </button>
-        <button class="btn btn-success w-50" @click="likeStudent(currentStudent)">
-          ✅
+        <button class="btn btn-success btn-round" @click="likeStudent(currentStudent)">
+          <i class="bi bi-check-lg"></i>
         </button>
       </div>
 
@@ -207,18 +217,65 @@ async function dislikeStudent(s) {
   </div>
 
   <div class="text-center mt-5">
-    <button class="btn btn-outline-secondary" @click="$router.back()">
-      Zurück
-    </button>
+    <BackButton />
   </div>
-
+</div>
   <Footer />
 </template>
 
 <style scoped>
 /* optional: kleine UI-Verbesserungen */
 .card {
-  border-radius: 14px;
+  border-radius: 40px;
+  background-color: #F3EFDF;
+  width: 100%;
+  max-width: 520px;
+  overflow: hidden; /* Damit das Bild oben auch rund ist */
+  
+}
+
+
+
+
+.card-img-top {
+  /* Nur die oberen Ecken abrunden, damit es bündig mit der Karte ist */
+  border-top-left-radius: 39px;
+  border-top-right-radius: 39px;
+  /* Deine bestehenden Styles bleiben: */
+  height: 350px;
+  object-fit: cover;
+}
+
+
+.studentSite {
+  /* Der Container selbst braucht diese Einstellungen, 
+     damit die Ebene dahinter richtig positioniert wird */
+  position: relative;
+  min-height: 100vh;
+  width: 100%;
+  overflow: hidden; /* Verhindert unschöne Ränder */
+}
+
+/* Diese "Ebene" hält das Hintergrundbild */
+.studentSite::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  
+  /* Dein Bild */
+  background-image: url('@/assets/img/matcha.jpg');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  
+  /* HIER stellst du die Deckkraft ein (0.0 bis 1.0) */
+  opacity: 0.3; 
+  
+  /* Das Bild muss hinter den Inhalt */
+  z-index: -1; 
 }
 /* Default (beim Filtern etc.) */
 .card-enter-active,
@@ -258,5 +315,26 @@ async function dislikeStudent(s) {
   transform: translateY(8px);
 }
 
+.btn-danger i {
+  font-size: 3.2rem; /* Hier kannst du die Größe beliebig anpassen */
+}
+.btn-success i {
+  font-size: 2.5rem; 
+}
+.btn-round {
+  width: 70px;        /* Gleiche Breite */
+  height: 70px;       /* Gleiche Höhe */
+  border-radius: 50%; /* Macht den Button kreisrund */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;         /* Entfernt Standard-Padding, damit das Icon zentriert ist */
+  font-size: 1.5rem;  /* Macht das Icon etwas größer */
+  transition: transform 0.2s ease; /* Kleiner Effekt beim Drüberfahren */
+}
+
+.btn-round:hover {
+  transform: scale(1.1); /* Button wird beim Hovern leicht größer */
+}
 
 </style>

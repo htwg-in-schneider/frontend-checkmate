@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue'
 import { useAuth0 } from '@auth0/auth0-vue'
 import Navbar from '@/components/Navbar.vue'
 import Footer from '@/components/Footer.vue'
+import BackButton from '@/components/backButton.vue'
 
 const { getAccessTokenSilently } = useAuth0()
 const API_BASE = import.meta.env.VITE_API_BASE_URL
@@ -125,9 +126,14 @@ onMounted(loadData)
         <button type="submit" class="save-btn" :disabled="saving">
           {{ saving ? 'Speichert...' : 'Änderungen speichern' }}
         </button>
+          <div class="text-center mt-5">
+           <BackButton />
+         </div>
       </form>
     </div>
+      
   </main>
+  
   <Footer />
 </template>
 
