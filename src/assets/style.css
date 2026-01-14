@@ -81,6 +81,7 @@ html, body {
  
 }
 
+
 h1 {
     text-align: center;
     margin-top: 1%;
@@ -174,61 +175,9 @@ details[open] > summary .chevron {
   transform: rotate(-135deg);
 }
 
-/* Inhalt */
-.about-body, .contact-body, .faq-body {
-  padding: 16px;
-  background: #f8f9fa;
-  animation: fadeIn 0.18s ease;
-  font-size: 16px;
-}
-
-.story1, .story3{
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  padding: 30px 10px 15px;
-  background-color: #F3EFDF;
-  flex-wrap: wrap; /* wichtig: erlaubt Umbruch auf Mobile */
-}
-.story2 {
-  display: flex;
-  flex-direction: row-reverse; /* Bild kommt nach rechts */
-  align-items: center;
-  gap: 20px;
-  padding: 30px 10px 15px;
-  background-color: #BDCFAA;
-  flex-wrap: wrap; /* wichtig: erlaubt Umbruch auf Mobile */
-}
-
-.story-img {
-  width: 160px;        /* kleineres Bild */
-  height: 160px;
-  object-fit: cover;
-  border-radius: 12px;
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
-  flex-shrink: 0;      /* Bild bleibt in seiner Größe */
-}
 
 
-.story-text {
-  flex: 1;             /* Text nutzt restlichen Platz */
-  min-width: 240px;    /* verhindert zu enge Textspalte */
-  font-size: 16px;
-  line-height: 1.5;
-}
 
-/* ===== GET THE APP SECTION ===== */
-.getapp {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 40px;
-  padding: 60px 10%;
-  background-color: #ffffff; /* sanft beige Hintergrund, passt zu deinem Stil */
-  border-top: 1px solid #e0dccc;
-  border-bottom: 1px solid #e0dccc;
-  flex-wrap: wrap;
-}
 
 /* Textbereich links */
 .getapp-text {
@@ -254,41 +203,27 @@ details[open] > summary .chevron {
   display: none; /* ausgeblendet auf Desktop */
 }
 
-/* QR-Code */
-.qrcode-img {
-  width: 200px;
-  height: auto;
-  display: block;
-  margin: 0 auto; 
-}
-
-
-/* App-Bild rechts */
-.getapp-img {
-  flex: 1;
-  max-width: 400px;
-  height: auto;
-  object-fit: contain;
-  margin: 1 auto; 
-}
 
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(-4px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* Farbvarianten */
-.about > summary, .faq > summary {
-  background: #BDCFAA;   /* sanft beige für About */
+.about {
+    text-align: center;
+  color: white;
+  font-style: italic;
+  font-size: 20px;
+  border: 2px solid #BDCFAA;
+  padding: 20px;
+  border-radius: 12px;
+  background-color: #8FA36A;
+  margin: 40px 0; }
+.about h3 {
+  text-align: center;
+  color: white;
+  font-size: 30px;
 }
-.contact > summary {
-  background: #F3EFDF;   /* grünlich-beige für Kontakt */
-}
-
-/* Optionale Hovereffekte */
-.about > summary:hover, .faq > summary:hover { background: #b8c7a5; }
-.contact > summary:hover { background: #E9E3C9; }
-
 
 /* ===== FOOTER ===== */
 .footer {
@@ -397,6 +332,7 @@ details[open] > summary .chevron {
       justify-items: center;
       row-gap: 18px;
       padding: 20px 10px;
+      
     }
     .story1 .story-text, .story2 .story-text, .story3 .story-text {
       grid-area: text;
@@ -446,15 +382,6 @@ details[open] > summary .chevron {
       margin-top: 2vh;
     }
   
-    h2 {
-      font-size: clamp(1rem, 4.5vw, 1.5rem);
-      font-style: italic;
-      margin-top: 2vh;
-    }
-
-    .contact-body, .about-body, .faq-body {
-      text-align: center;
-    }
 
     .qrcode-img, .getapp-img {
       display: none; /* QR-Code ausblenden */
@@ -470,15 +397,7 @@ details[open] > summary .chevron {
     }
   
  
-  
-    .getapp-text h4 {
-      font-size: 40px;
-    }
 
-    .getapp-text p {
-      display: none;
-    }
-  
   /* Footer stapeln */
   .footer-content {
     flex-direction: column;
@@ -486,7 +405,7 @@ details[open] > summary .chevron {
   }
   .footer-links {
     flex-direction: column;
-    gap: 10px;
+
   }
 }
 
@@ -508,7 +427,6 @@ details[open] > summary .chevron {
      aber mit angenehmen Abständen */
   .story1, .story2, .story3 {
     display: flex;         /* Desktop-Layout beibehalten */
-    gap: 20px;
     align-items: center;
     text-align: left;
   }

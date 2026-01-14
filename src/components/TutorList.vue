@@ -1,219 +1,675 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue';
-import TutorCard from '@/components/TutorCard.vue';
-import TutorFilter from '@/components/TutorFilter.vue';
+import { ref, onMounted, computed, watch, onBeforeUnmount } from "vue"
+import TutorCard from "@/components/TutorCard.vue"
+import TutorFilter from "@/components/TutorFilter.vue"
+import { useAuth0 } from "@auth0/auth0-vue"
+import { useCartStore } from "@/stores/cart"
+import { useRouter } from "vue-router"
+const router = useRouter()
+
+const cart = useCartStore()
 
 // Basis-URL – entweder aus .env oder fallback auf localhost
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8081"
+
+// Auth0
+const { getAccessTokenSilently, isAuthenticated, isLoading } = useAuth0()
 
 // State
-const tutors = ref([]);
-const categories = ref([]);
-const loading = ref(true);
-const error = ref(null);
+const tutors = ref([])
+const categories = ref([])
+const loading = ref(true)
+const error = ref(null)
 
-// Filter-States (werden vom Child gesetzt)
-const searchName = ref('');
-const selectedCategory = ref(''); // "" = keine Kategorie → alle anzeigen
+// Role / Profile
+const backendProfile = ref(null)
+const isAdmin = ref(false)
 
-const showCreateForm = ref(false);
+// Filter-States
+const searchName = ref("")
+const selectedCategory = ref("") // "" = keine Kategorie → alle anzeigen
+
+// Admin: Create Tutor Modal
+const showCreateForm = ref(false)
 const newTutor = ref({
   name: "",
   subject: "",
   semester: 1,
-  image: ""
-});
+  image: "",
+})
+
+// ============================
+// Booking Modal (Datum + Zeit)
+// ============================
+const showBookingModal = ref(false)
+const selectedTutor = ref(null)
+
+// Dropdown Dates
+const availableDates = ref([]) // ["2026-01-15","2026-01-16",...]
+const selectedDate = ref("") // "YYYY-MM-DD"
+
+// Times
+const availableTimes = ref([]) // ["14:00","14:30",...]
+const selectedTime = ref("") // "HH:mm"
+
+const bookingForm = ref({
+  durationMinutes: 60, // 30/60/90/120
+  note: "",
+})
+
+const bookingError = ref(null)
+const bookingOk = ref(false)
+
+// ------------------------------------
+// Computed: aktuelles startAt zusammenbauen
+// ------------------------------------
+const computedStartAt = computed(() => {
+  if (!selectedDate.value || !selectedTime.value) return ""
+  return `${selectedDate.value}T${selectedTime.value}`
+})
+
+// sobald irgendeine Buchung dieses Tutors im Warenkorb liegt
+const hasAnyBookingInCart = computed(() => {
+  if (!selectedTutor.value) return false
+  return (cart.items || []).some((it) => it.type === "booking" && it.tutorId === selectedTutor.value.id)
+})
+
+// ist genau diese Buchung im Cart?
+const isThisBookingInCart = computed(() => {
+  if (!selectedTutor.value) return false
+  if (!computedStartAt.value) return false
+
+  const key = `booking-${selectedTutor.value.id}-${computedStartAt.value}`
+
+  return (cart.items || []).some((it) => {
+    if (it.key && it.key === key) return true
+    return it.type === "booking" && it.tutorId === selectedTutor.value.id && it.startAt === computedStartAt.value
+  })
+})
+
+function toMinutes(hhmm) {
+  const [h, m] = (hhmm || "").split(":").map(Number)
+  return h * 60 + m
+}
+
+function overlap(aStart, aDur, bStart, bDur) {
+  const aEnd = aStart + aDur
+  const bEnd = bStart + bDur
+  return aStart < bEnd && bStart < aEnd
+}
+
+function hasOverlappingBookingInCart(tutorId, dateYYYYMMDD, startHHmm, durationMinutes) {
+  const newStart = toMinutes(startHHmm)
+  const newDur = Number(durationMinutes)
+
+  return (cart.items || []).some((it) => {
+    if (it.type !== "booking") return false
+    if (it.tutorId !== tutorId) return false
+
+    const [itDate, itTime] = String(it.startAt || "").split("T")
+    if (itDate !== dateYYYYMMDD) return false
+
+    const itStart = toMinutes(itTime)
+    const itDur = Number(it.durationMinutes ?? 0)
+
+    return overlap(newStart, newDur, itStart, itDur)
+  })
+}
+
+// Times filtern (keine Überschneidung im Cart)
+const filteredAvailableTimes = computed(() => {
+  if (!selectedTutor.value) return availableTimes.value
+  if (!selectedDate.value) return availableTimes.value
+
+  const tutorId = selectedTutor.value.id
+  const dur = Number(bookingForm.value.durationMinutes ?? 60)
+
+  const cartBookingsSameTutorSameDate = (cart.items || []).filter((it) => {
+    if (it.type !== "booking") return false
+    if (it.tutorId !== tutorId) return false
+    const [d] = String(it.startAt || "").split("T")
+    return d === selectedDate.value
+  })
+
+  if (!cartBookingsSameTutorSameDate.length) return availableTimes.value
+
+  return availableTimes.value.filter((t) => {
+    const candStart = toMinutes(t)
+
+    const clashes = cartBookingsSameTutorSameDate.some((it) => {
+      const [, itTime] = String(it.startAt || "").split("T")
+      const itStart = toMinutes(itTime)
+      const itDur = Number(it.durationMinutes ?? 0)
+      return overlap(candStart, dur, itStart, itDur)
+    })
+
+    return !clashes
+  })
+})
+
+// ============================
+// Chat Modal
+// ============================
+const showChatModal = ref(false)
+const chatTutor = ref(null)
+const chatMessages = ref([])
+const chatInput = ref("")
+const chatError = ref(null)
+let pollTimer = null
+
+function openChatModal(tutor) {
+  chatTutor.value = tutor
+  showChatModal.value = true
+  chatMessages.value = []
+  chatInput.value = ""
+  chatError.value = null
+  loadChat()
+  startPolling()
+}
 
 
-// Daten laden, sobald Komponente gemountet ist
+function openContactModal(tutor) {
+  if (!tutor?.id) return
+  router.push({ path: "/messages", query: { tutorId: tutor.id } })
+}
+function closeChatModal() {
+  showChatModal.value = false
+  chatTutor.value = null
+  chatMessages.value = []
+  chatInput.value = ""
+  chatError.value = null
+  stopPolling()
+}
+
+function stopPolling() {
+  if (pollTimer) clearInterval(pollTimer)
+  pollTimer = null
+}
+
+function startPolling() {
+  stopPolling()
+  pollTimer = setInterval(loadChat, 2500)
+}
+
+async function loadChat() {
+  if (!chatTutor.value) return
+  try {
+    const token = await getAccessTokenSilently()
+    const res = await fetch(`${API_BASE}/api/chat/${chatTutor.value.id}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (!res.ok) throw new Error(`Chat load failed: ${res.status}`)
+    chatMessages.value = await res.json()
+  } catch (e) {
+    chatError.value = e?.message ?? String(e)
+  }
+}
+
+async function sendChatMessage() {
+  if (!chatTutor.value) return
+  const msg = String(chatInput.value || "").trim()
+  if (!msg) return
+
+  try {
+    const token = await getAccessTokenSilently()
+    const res = await fetch(`${API_BASE}/api/chat/${chatTutor.value.id}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ message: msg }),
+    })
+
+    if (!res.ok) {
+      const txt = await res.text().catch(() => "")
+      throw new Error(`Send failed: ${res.status} ${txt}`)
+    }
+
+    chatInput.value = ""
+    await loadChat()
+  } catch (e) {
+    chatError.value = e?.message ?? String(e)
+  }
+}
+
+function formatChatTime(dt) {
+  const s0 = String(dt || "").trim()
+  if (!s0) return ""
+  const normalized = s0.replace(" ", "T").replace(/(\.\d+)?$/, "")
+  const [datePart, timePartFull] = normalized.split("T")
+  if (!datePart || !timePartFull) return s0
+  const [y, m, d] = datePart.split("-")
+  return `${d}.${m}.${y} ${timePartFull.slice(0, 5)}`
+}
+
+onBeforeUnmount(() => stopPolling())
+
+// ============================
+// Daten laden
+// ============================
 onMounted(async () => {
-  await Promise.all([fetchTutors(), fetchCategories()]);
-});
+  await Promise.all([fetchTutors(), fetchCategories()])
+  if (isAuthenticated.value) await loadBackendProfile()
+})
 
+// Backend Profile (Role) laden
+async function loadBackendProfile() {
+  try {
+    const token = await getAccessTokenSilently()
+    const res = await fetch(`${API_BASE}/api/profile`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+
+    if (!res.ok) {
+      const txt = await res.text().catch(() => "")
+      throw new Error(`Profile load failed: ${res.status} ${txt}`)
+    }
+
+    const profile = await res.json()
+    backendProfile.value = profile
+    isAdmin.value = profile?.role === "ADMIN"
+  } catch (e) {
+    console.error("Could not load backend profile:", e)
+    backendProfile.value = null
+    isAdmin.value = false
+  }
+}
+
+// Admin: Tutor erstellen
 async function createTutor() {
   try {
+    if (!isAdmin.value) {
+      alert("Nur Admins dürfen Tutor:innen erstellen.")
+      return
+    }
+
+    const token = await getAccessTokenSilently()
+
     const response = await fetch(`${API_BASE}/api/tutors`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(newTutor.value)
-    });
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(newTutor.value),
+    })
 
     if (!response.ok) {
-      throw new Error("Error creating tutor");
+      const txt = await response.text().catch(() => "")
+      throw new Error(`Error creating tutor: ${response.status} ${txt}`)
     }
 
-    //alert("Tutor erfolgreich erstellt!");
-
-    showCreateForm.value = false;
-    newTutor.value = { name: "", subject: "", semester: 1, image: "" };
-
-    await fetchTutors(); // Liste nachladen
-  } catch (err) {
-    console.error(err);
-   // alert("Fehler beim Erstellen");
+    await fetchTutors()
+    showCreateForm.value = false
+    newTutor.value = { name: "", subject: "", semester: 1, image: "" }
+  } catch (e) {
+    console.error(e)
+    alert("Tutor konnte nicht erstellt werden.")
   }
 }
 
-
-// Tutor:innen vom Backend holen
+// Tutor:innen laden
 async function fetchTutors() {
-  loading.value = true;
-  error.value = null;
+  loading.value = true
+  error.value = null
   try {
-    const res = await fetch(`${API_BASE}/api/tutors`);
-    if (!res.ok) {
-      throw new Error(`HTTP-Fehler: ${res.status}`);
-    }
-    tutors.value = await res.json();
-    console.log('Tutors:', tutors.value);
+    const res = await fetch(`${API_BASE}/api/tutors`)
+    if (!res.ok) throw new Error(`HTTP-Fehler: ${res.status}`)
+    tutors.value = await res.json()
   } catch (err) {
-    console.error('Fehler beim Laden der Tutor:innen:', err);
-    error.value = 'Fehler beim Laden der Tutor:innen.';
+    console.error("Fehler beim Laden der Tutor:innen:", err)
+    error.value = "Fehler beim Laden der Tutor:innen."
   } finally {
-    loading.value = false;
+    loading.value = false
   }
 }
 
-
-
-// Kategorien aus dem Backend holen
+// Kategorien laden
 async function fetchCategories() {
   try {
-    const res = await fetch(`${API_BASE}/api/category`);
-    if (!res.ok) {
-      throw new Error(`HTTP-Fehler Kategorien: ${res.status}`);
-    }
-    categories.value = await res.json();
-    console.log('Categories:', categories.value);
+    const res = await fetch(`${API_BASE}/api/category`)
+    if (!res.ok) throw new Error(`HTTP-Fehler Kategorien: ${res.status}`)
+    categories.value = await res.json()
   } catch (err) {
-    console.error('Fehler beim Laden der Kategorien:', err);
+    console.error("Fehler beim Laden der Kategorien:", err)
   }
 }
 
-// gefilterte Liste (Name + Kategorie)
+// Filtered Tutors
 const filteredTutors = computed(() => {
-  if (!searchName.value && !selectedCategory.value) {
-    return tutors.value;
-  }
+  if (!searchName.value && !selectedCategory.value) return tutors.value
 
   return tutors.value.filter((tutor) => {
     const nameMatches =
-      !searchName.value ||
-      (tutor.name || '').toLowerCase().includes(searchName.value.toLowerCase());
+      !searchName.value || (tutor.name || "").toLowerCase().includes(searchName.value.toLowerCase())
+    const categoryMatches = !selectedCategory.value || tutor.category === selectedCategory.value
+    return nameMatches && categoryMatches
+  })
+})
 
-    const categoryMatches =
-      !selectedCategory.value || tutor.category === selectedCategory.value;
-
-    return nameMatches && categoryMatches;
-  });
-});
-
-// Event-Handler vom Child TutorFilter
+// Child Filter Event
 function handleTutorUpdate({ name, subject }) {
-  searchName.value = name;
-  selectedCategory.value = subject;
+  searchName.value = name
+  selectedCategory.value = subject
 }
 
 function handleTutorDeleted(id) {
-  tutors.value = tutors.value.filter(t => t.id !== id);
+  tutors.value = tutors.value.filter((t) => t.id !== id)
 }
 
+// =============================
+// Booking: Modal öffnen/schließen
+// =============================
+async function openBookingModal(tutor) {
+  selectedTutor.value = tutor
+  bookingError.value = null
+  bookingOk.value = false
+
+  // reset
+  availableDates.value = []
+  selectedDate.value = ""
+  availableTimes.value = []
+  selectedTime.value = ""
+
+  // defaults
+  bookingForm.value.durationMinutes = 60
+  bookingForm.value.note = ""
+
+  showBookingModal.value = true
+  await reloadDates()
+}
+
+function closeBookingModal() {
+  showBookingModal.value = false
+  selectedTutor.value = null
+}
+
+async function reloadDates() {
+  if (!selectedTutor.value) return
+
+  bookingError.value = null
+  availableDates.value = []
+  selectedDate.value = ""
+  availableTimes.value = []
+  selectedTime.value = ""
+
+  try {
+    const res = await fetch(
+      `${API_BASE}/api/tutors/${selectedTutor.value.id}/available-dates?days=14&durationMinutes=${bookingForm.value.durationMinutes}`
+    )
+    if (!res.ok) throw new Error(`Dates laden fehlgeschlagen: ${res.status}`)
+    availableDates.value = await res.json()
+  } catch (e) {
+    bookingError.value = e?.message ?? String(e)
+  }
+}
+
+// Preis berechnen: hourlyRate * duration
+function calcBookingPrice() {
+  const rate = Number(selectedTutor.value?.hourlyRate ?? 0)
+  const minutes = Number(bookingForm.value.durationMinutes ?? 0)
+  if (!rate || !minutes) return "0.00"
+  return (rate * (minutes / 60)).toFixed(2)
+}
+
+// Available Times laden (Backend)
+async function fetchAvailableTimes() {
+  if (!selectedTutor.value || !selectedDate.value) return
+
+  bookingError.value = null
+  availableTimes.value = []
+  selectedTime.value = ""
+
+  try {
+    const url =
+      `${API_BASE}/api/tutors/${selectedTutor.value.id}/available-times` +
+      `?date=${selectedDate.value}&durationMinutes=${bookingForm.value.durationMinutes}`
+
+    const res = await fetch(url)
+    if (!res.ok) throw new Error(`Times laden fehlgeschlagen: ${res.status}`)
+
+    availableTimes.value = await res.json()
+
+    if (selectedTime.value && !filteredAvailableTimes.value.includes(selectedTime.value)) {
+      selectedTime.value = ""
+    }
+  } catch (e) {
+    bookingError.value = e?.message ?? String(e)
+  }
+}
+
+// In Warenkorb legen
+function addBookingToCart() {
+  bookingError.value = null
+
+  try {
+    if (!selectedTutor.value) throw new Error("Kein Tutor ausgewählt.")
+    if (!selectedDate.value) throw new Error("Bitte Datum auswählen.")
+    if (!selectedTime.value) throw new Error("Bitte Startuhrzeit auswählen.")
+
+    const rate = Number(selectedTutor.value.hourlyRate ?? 0)
+    const minutes = Number(bookingForm.value.durationMinutes ?? 60)
+    const priceTotal = rate ? (rate * (minutes / 60)).toFixed(2) : "0.00"
+
+    const tutorId = selectedTutor.value.id
+
+    if (hasOverlappingBookingInCart(tutorId, selectedDate.value, selectedTime.value, minutes)) {
+      throw new Error("Dieser Termin überschneidet sich mit einer Buchung im Warenkorb.")
+    }
+
+    cart.addBooking({
+      tutorId,
+      tutorName: selectedTutor.value.name,
+      subject: selectedTutor.value.subject,
+      startAt: computedStartAt.value,
+      durationMinutes: minutes,
+      hourlyRate: rate,
+      priceTotal: Number(priceTotal),
+      note: bookingForm.value.note,
+      type: "booking",
+    })
+
+    bookingOk.value = true
+    fetchAvailableTimes()
+  } catch (e) {
+    bookingError.value = e?.message ?? String(e)
+  }
+}
+
+// Wenn Cart sich ändert und Modal offen ist → Zeiten neu laden
+watch(
+  () => cart.items,
+  async () => {
+    if (!showBookingModal.value) return
+    if (!selectedTutor.value || !selectedDate.value) return
+
+    await fetchAvailableTimes()
+
+    if (selectedTime.value && !filteredAvailableTimes.value.includes(selectedTime.value)) {
+      selectedTime.value = ""
+    }
+  },
+  { deep: true }
+)
 </script>
 
 <template>
-
-
-  <!-- NEU: Wrapper mit Hintergrundbild -->
   <div class="tutor-page">
-
-    
     <div class="container py-4 tutorlist">
-
-      <!-- Header-Bereich -->
       <div class="tutor-header-container">
-
-        <!-- Filter oben rechts -->
         <div class="filter-top-right">
           <div class="filter-clean">
-            <TutorFilter
-              :subjects="categories"
-              @tutorUpdate="handleTutorUpdate"
-            />
+            <TutorFilter :subjects="categories" @tutorUpdate="handleTutorUpdate" />
           </div>
         </div>
 
-        <!-- Titel links -->
         <h1 class="tutor-title">Unsere Tutor:innen</h1>
       </div>
-        <div class="text-end mb-3">
-  <button class="btn btn-success" @click="showCreateForm = true">
-    + Tutor erstellen
-  </button>
-</div>
 
-      <!-- Lade- & Fehlerzustände -->
+      <div class="text-end mb-3" v-if="!isLoading && isAuthenticated && isAdmin">
+        <button class="btn btn-success" @click="showCreateForm = true">+ Tutor erstellen</button>
+      </div>
+
+      <p class="text-end text-light" v-else-if="!isLoading && isAuthenticated && !isAdmin">
+        (Nur Admins können Tutor:innen erstellen.)
+      </p>
+
       <p v-if="loading" class="text-center">Lade Tutor:innen…</p>
       <p v-else-if="error" class="text-center text-danger">{{ error }}</p>
 
-      <!-- Tutor:innen-Liste -->
       <div v-else class="row g-4">
-        <div
-          v-for="tutor in filteredTutors"
-          :key="tutor.id"
-          class="col-md-4"
-        >
+        <div v-for="tutor in filteredTutors" :key="tutor.id" class="col-md-4">
           <TutorCard
-           :tutor="tutor"
-           @deleted="handleTutorDeleted"
+            :tutor="tutor"
+            :is-admin="isAdmin"
+            @deleted="handleTutorDeleted"
+            @book="openBookingModal"
+            @contact="openChatModal"
           />
         </div>
 
-        <p
-          v-if="!filteredTutors.length && !loading"
-          class="text-center mt-4"
-        >
+        <p v-if="!filteredTutors.length && !loading" class="text-center mt-4">
           Keine Tutor:innen gefunden. Passe Suche oder Kategorie an.
         </p>
       </div>
 
       <div class="text-center mt-5">
-        <button
-          class="btn btn-outline-secondary"
-          @click="$router.push('/')"
-        >
-          Zurück zur Startseite
-        </button>
+        <button class="btn btn-outline-secondary" @click="$router.back()">Zurück</button>
       </div>
     </div>
   </div>
-  <div v-if="showCreateForm" class="modal-backdrop">
-  <div class="modal-content">
-    <h3>Neuen Tutor erstellen</h3>
 
-    <input v-model="newTutor.name" class="form-control mb-2" placeholder="Name" />
-    <input v-model="newTutor.subject" class="form-control mb-2" placeholder="Fach" />
-    <input v-model="newTutor.semester" type="number" class="form-control mb-2" placeholder="Semester" />
-    <input v-model="newTutor.image" class="form-control mb-2" placeholder="Bild-URL" />
+  <!-- ✅ Admin: Create Tutor Modal -->
+  <div v-if="showCreateForm && !isLoading && isAuthenticated && isAdmin" class="modal-backdrop">
+    <div class="modal-content">
+      <h3>Neuen Tutor erstellen</h3>
 
-    <div class="d-flex gap-2 mt-3">
-      <button class="btn btn-success" @click="createTutor">Erstellen</button>
-      <button class="btn btn-secondary" @click="showCreateForm = false">Abbrechen</button>
+      <input v-model="newTutor.name" class="form-control mb-2" placeholder="Name" />
+      <input v-model="newTutor.subject" class="form-control mb-2" placeholder="Fach" />
+      <input v-model="newTutor.semester" type="number" class="form-control mb-2" placeholder="Semester" />
+      <input v-model="newTutor.image" class="form-control mb-2" placeholder="Bild-URL" />
+
+      <div class="d-flex gap-2 mt-3">
+        <button class="btn btn-success" @click="createTutor">Erstellen</button>
+        <button class="btn btn-secondary" @click="showCreateForm = false">Abbrechen</button>
+      </div>
     </div>
   </div>
-</div>
+
+  <!-- ✅ Booking Modal -->
+  <div v-if="showBookingModal" class="modal-backdrop">
+    <div class="modal-content">
+      <h3>Stunde buchen</h3>
+
+      <p v-if="selectedTutor">
+        Tutor: <strong>{{ selectedTutor.name }}</strong><br />
+        Preis: <strong>{{ selectedTutor.hourlyRate ?? "—" }} € / Stunde</strong>
+      </p>
+
+      <label class="form-label">Dauer</label>
+      <select v-model.number="bookingForm.durationMinutes" class="form-control mb-2" @change="reloadDates">
+        <option :value="30">30 Minuten</option>
+        <option :value="60">60 Minuten</option>
+        <option :value="90">90 Minuten</option>
+        <option :value="120">120 Minuten</option>
+      </select>
+
+      <label class="form-label">Datum wählen</label>
+      <select
+        v-model="selectedDate"
+        class="form-control mb-2"
+        @change="fetchAvailableTimes"
+        :disabled="!availableDates.length"
+      >
+        <option value="" disabled>Bitte auswählen…</option>
+        <option v-for="d in availableDates" :key="d" :value="d">
+          {{ d }}
+        </option>
+      </select>
+
+      <label class="form-label">Startuhrzeit</label>
+      <select v-model="selectedTime" class="form-control mb-2" :disabled="!filteredAvailableTimes.length">
+        <option value="" disabled>Bitte auswählen…</option>
+        <option v-for="t in filteredAvailableTimes" :key="t" :value="t">
+          {{ t }}
+        </option>
+      </select>
+
+      <label class="form-label">Notiz (optional)</label>
+      <textarea v-model="bookingForm.note" class="form-control mb-2" rows="2"></textarea>
+
+      <div class="mt-2">Gesamtpreis: <strong>{{ calcBookingPrice() }} €</strong></div>
+
+      <div class="d-flex gap-2 mt-3">
+        <button
+          class="btn btn-success"
+          :disabled="!selectedDate || !selectedTime"
+          v-if="!isThisBookingInCart"
+          @click="addBookingToCart"
+        >
+          In den Warenkorb
+        </button>
+
+        <button class="btn btn-outline-primary" v-if="hasAnyBookingInCart" @click="$router.push('/checkout')">
+          Im Warenkorb ansehen
+        </button>
+
+        <button class="btn btn-secondary" @click="closeBookingModal">Schließen</button>
+      </div>
+
+      <p v-if="bookingOk" class="text-success mt-2">Erfolgreich zum Warenkorb hinzugefügt!</p>
+      <p v-if="bookingError" class="text-danger mt-2">{{ bookingError }}</p>
+    </div>
+  </div>
+
+  <!-- ✅ Chat Modal -->
+  <div v-if="showChatModal" class="modal-backdrop">
+    <div class="modal-content">
+      <h3>Chat mit {{ chatTutor?.name }}</h3>
+      <p class="text-muted" style="margin-top: -6px;">
+        {{ chatTutor?.subject }}
+      </p>
+
+      <div class="chat-box">
+        <div v-if="!chatMessages.length" class="text-muted small">Noch keine Nachrichten.</div>
+
+        <div v-for="m in chatMessages" :key="m.id" class="chat-msg" :class="{ mine: m.senderRole === 'STUDENT' }">
+          <div class="chat-bubble">
+            <div class="chat-text">{{ m.message }}</div>
+            <div class="chat-time">{{ formatChatTime(m.createdAt) }}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="d-flex gap-2 mt-2">
+        <input
+          v-model="chatInput"
+          class="form-control"
+          placeholder="Nachricht schreiben..."
+          @keyup.enter="sendChatMessage"
+        />
+        <button class="btn btn-success" @click="sendChatMessage">Senden</button>
+      </div>
+
+      <p v-if="chatError" class="text-danger mt-2">{{ chatError }}</p>
+
+      <div class="d-flex gap-2 mt-3">
+        <button class="btn btn-secondary" @click="closeChatModal">Schließen</button>
+      </div>
+    </div>
+  </div>
 </template>
 
-
-
 <style scoped>
-
-  .modal-backdrop {
+.modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.4);
+  background: rgba(0, 0, 0, 0.4);
   display: flex;
   justify-content: center;
   align-items: center;
+  z-index: 9999;
 }
 
 .modal-content {
@@ -221,54 +677,42 @@ function handleTutorDeleted(id) {
   padding: 20px;
   border-radius: 12px;
   width: 400px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+  max-width: 92vw;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
 }
 
-/* GANZE Tutor-Seite mit faded Hintergrundbild */
 .tutor-page {
   min-height: 100vh;
-  /* leichte weiße Schicht drüber, damit es "gefadet" wirkt */
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.75)),
-    url('@/assets/img/background.avif');
+  background-image: linear-gradient(rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.75)),
+    url("@/assets/img/background.avif");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  padding-top: 4rem; /* etwas Luft unter der Navbar */
+  padding-top: 4rem;
   padding-bottom: 4rem;
 }
 
-/* Header Layout */
 .tutor-header-container {
   position: relative;
   margin-bottom: 2rem;
 }
 
-/* Überschrift links */
-/*.tutor-title {
-  font-weight: 600;
-  text-align: left;
-  margin-top: 48px; /* Platz für Filter */
-  .tutor-title {
+.tutor-title {
   font-family: sans-serif;
   font-size: 80px;
   font-weight: 600;
   color: white !important;
   letter-spacing: 0.8px;
-    text-align: left;
-     text-shadow: 0 0 12px #607953;
-
+  text-align: left;
+  text-shadow: 0 0 12px #607953;
 }
 
-
-/* Filter oben rechts */
 .filter-top-right {
   position: absolute;
   top: 0;
   right: 0;
 }
 
-/* Filter ohne Rand, neutral */
 .filter-clean ::v-deep .tutor-filter-box {
   border: none !important;
   background: transparent !important;
@@ -276,21 +720,61 @@ function handleTutorDeleted(id) {
   margin: 0 !important;
 }
 
-/* Mobile: Filter unter dem Titel */
 @media (max-width: 576px) {
   .tutor-page {
     padding-top: 2rem;
   }
-
   .filter-top-right {
     position: static;
     margin-bottom: 1rem;
     display: flex;
     justify-content: flex-start;
   }
-
   .tutor-title {
     margin-top: 0;
   }
+}
+
+/* Chat UI */
+.chat-box {
+  border: 1px solid #eee;
+  border-radius: 10px;
+  padding: 10px;
+  height: 280px;
+  overflow-y: auto;
+  background: #fafafa;
+}
+
+.chat-msg {
+  display: flex;
+  margin-bottom: 10px;
+}
+
+.chat-msg.mine {
+  justify-content: flex-end;
+}
+
+.chat-bubble {
+  max-width: 80%;
+  border-radius: 12px;
+  padding: 10px;
+  background: white;
+  border: 1px solid #eee;
+}
+
+.chat-msg.mine .chat-bubble {
+  background: #e9f5e6;
+  border-color: #d5ead0;
+}
+
+.chat-text {
+  white-space: pre-wrap;
+}
+
+.chat-time {
+  font-size: 12px;
+  color: #777;
+  margin-top: 6px;
+  text-align: right;
 }
 </style>

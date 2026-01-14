@@ -1,18 +1,28 @@
 <script setup>
 import Button from '@/components/Button.vue'
-import Navbar from '@/components/Navbar.vue'
-import Footer from '@/components/Footer.vue'
+//import Navbar from '@/components/Navbar.vue'
+//import Footer from '@/components/Footer.vue'
+import StoryCard from '@/components/StoryCard.vue';
+import studyImage from '@/assets/img/studygroup.png'
+import success1 from '@/assets/img/erfolgsgeschichte.png'
+import tutorin from '@/assets/img/tutorin.png'
+import Contact from '@/components/Contact.vue'
+import { useAuth0 } from '@auth0/auth0-vue'
+
 import { useRouter } from 'vue-router'
 
+const { loginWithRedirect } = useAuth0()
 const router = useRouter()
-
+function start() {
+  loginWithRedirect({
+  appState: { target: '/app' }
+})
+}
 function goToTutors() {
   router.push('/tutoren')
 }
 
-function showComingSoon() {
-  router.push('/coming-soon')
-}
+
 </script>
 
 <template>
@@ -32,16 +42,54 @@ function showComingSoon() {
 
     <!-- BUTTONS -->
     <div class="button-stack">
-      <button id="register" @click="showComingSoon">
-        Jetzt starten
-      </button>
+        <button id="register" @click="start">Jetzt starten</button>
 
-      <Button variant="accent" :onClick="goToTutors">
-        Hier kommt ihr zu unseren Tutoren
-      </Button>
     </div>
 
-    <div class="container section-list my-5">
+    <div class="container section-list my-5 ">
+
+        <!-- ABOUT -->
+  <div class="about">
+    <h3>✨ About us ✨</h3>
+
+    <p>
+      Lernen muss nicht einsam, stressig oder kompliziert sein – und genau deshalb gibt es
+      <strong>CheckMate</strong> 💡
+    </p>
+
+    <p>
+      Unsere Plattform ist aus einer einfachen Idee entstanden:
+      <strong>Gemeinsam lernt es sich leichter.</strong> 🤍  
+      Wir möchten Studierende, Tutor:innen und Lernbegeisterte zusammenbringen, die sich
+      gegenseitig unterstützen, motivieren und weiterbringen.
+    </p>
+
+    <p>
+      Egal ob Prüfungsvorbereitung 📚, Verständnisfragen 🤔 oder der letzte Motivationsschub 💪 –
+      bei CheckMate findest du Menschen, die dich genau dort abholen, wo du gerade stehst.
+      Persönlich, flexibel und auf Augenhöhe.
+    </p>
+
+    <p>
+      Uns ist wichtig, dass Lernen nicht nur effektiv, sondern auch menschlich ist 🤝  
+      Vertrauen, Austausch und ein respektvolles Miteinander stehen bei uns im Mittelpunkt.
+    </p>
+
+    <p>
+      <strong>CheckMate ist mehr als eine Lernplattform.</strong><br />
+      Es ist ein Ort für Fragen 💬, Fortschritt 🚀 und gemeinsames Wachsen 🌱
+    </p>
+
+    <p>
+      Schön, dass du da bist – let’s learn together! 🧠💚
+    </p>
+    <Button variant="accent" :onClick="goToTutors">
+        Hier kommt ihr zu unseren Tutoren
+      </Button>
+       <p>
+    </p>
+   
+  </div>
 
       <!-- ERFOLGSGESCHICHTE 1 -->
       <div class="story1">
@@ -91,6 +139,7 @@ function showComingSoon() {
             aus niedrigeren Semestern bei ihr, die Unterstützung in
             Mathe II und Thermodynamik suchten...
           </p>
+            
         </div>
       </div>
 
@@ -107,53 +156,16 @@ function showComingSoon() {
             Was als spontane Lerngruppe für die Statistik-Klausur begann,
             wurde zu einer richtigen <strong>Study-Community</strong>...
           </p>
-        </div>
+          
+        </div>        
       </div>
 
-      <!-- ABOUT -->
-      <details class="about">
-        <summary>
-          <span>Über uns</span>
-          <span class="chevron" aria-hidden="true"></span>
-        </summary>
-        <div class="about-body">
-          <p>
-            <strong>CheckMate</strong> ist mehr als nur eine Plattform –
-            es ist eine kleine Community von Studierenden...
-          </p>
-        </div>
-      </details>
+      
 
-      <!-- KONTAKT -->
-      <details class="contact">
-        <summary>
-          <span>Kontakt</span>
-          <span class="chevron" aria-hidden="true"></span>
-        </summary>
-        <div class="contact-body">
-          <p>
-            Du hast Fragen, Feedback? Schreib uns:
-            <a href="mailto:hello@checkmate.app">hello@checkmate.app</a>
-          </p>
-        </div>
-      </details>
 
-      <!-- FAQ -->
-      <details class="faq">
-        <summary>
-          <span>FAQ</span>
-          <span class="chevron" aria-hidden="true"></span>
-        </summary>
-        <div class="faq-body">
-          <p>
-            Hier findest du bald Antworten...
-          </p>
-        </div>
-      </details>
+  
 
-      <!-- FOOTER -->
-      <Footer />
-
+    
     </div>
   </div>
 </template>
@@ -166,8 +178,9 @@ function showComingSoon() {
   align-items: center;
 }
 #home {
-  background-color:  #697C44; /* Oder was du willst */
+  background: #697C44;
   min-height: 100vh;
+  padding-bottom: 1rem; /* damit unten Luft ist, aber grün */
 }
 
 h1 {
@@ -188,7 +201,51 @@ h2 {
     font-weight: 700;
     color: #262424;
 }
-@media (max-width: 800px) {
+
+.story1, .story3{
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 30px 10px 15px;
+  background-color: #F3EFDF;
+  flex-wrap: wrap; /* wichtig: erlaubt Umbruch auf Mobile */
+   border-radius: 30px;
+  margin-bottom: 20px;
+}
+.story2 {
+  display: flex;
+  flex-direction: row-reverse; /* Bild kommt nach rechts */
+  align-items: center;
+  gap: 20px;
+  padding: 30px 10px 15px;
+  background-color: #BDCFAA;
+  flex-wrap: wrap; /* wichtig: erlaubt Umbruch auf Mobile */
+  border-radius: 30px;
+  margin-bottom: 20px;
+}
+
+.story-img {
+  width: 370px;        /* kleineres Bild */
+  height: 460px;
+  object-fit: cover;
+  border-radius: 12px;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;      /* Bild bleibt in seiner Größe */
+  margin: 19px;
+}
+h4{
+  font-size: 40px;
+}
+
+.story-text {
+  margin: 15px;
+  flex: 1;             /* Text nutzt restlichen Platz */
+  min-width: 240px;    /* verhindert zu enge Textspalte */
+  font-size: 22px;
+  line-height: 1.5;
+}
+
+@media (max-width: 760px) {
     h1 {
       font-size: clamp(1.8rem, 8vw, 2.8rem); /* kleiner, aber dynamisch */
       margin: 2vh;
@@ -200,7 +257,63 @@ h2 {
       margin-bottom: 1%;
       padding-bottom: 2%;
     }
+     h4 {
+    font-size: 25px;
+    }
+ 
+   
 
+.story-text {
+    transition: all 0.3s ease;
+    
+    font-size: 16px;
+  }
+
+        
+      
+    .story1 .story-img, .story2 .story-img, .story3 .story-img {
+      grid-area: img;
+      width: 350px;        /* kleineres Bild */
+      height: 260px;
+      aspect-ratio: 1 / 1;       /* optional: quadratisch */
+      margin:0px;
+    }
+}
+
+
+@media (max-width: 1000px) {
+    h1 {
+      font-size: clamp(1.8rem, 8vw, 2.8rem); /* kleiner, aber dynamisch */
+      margin: 2vh;
+    }
+  
+    h2 {
+      font-size: clamp(1rem, 4.5vw, 1.5rem);
+      font-style: italic;
+      margin-bottom: 1%;
+      padding-bottom: 2%;
+    }
+     h4 {
+    font-size: 25px;
+    }
+ 
+   
+
+.story-text {
+    transition: all 0.3s ease;
+    
+    font-size: 16px;
+  }
+
+        
+      
+    .story1 .story-img, .story2 .story-img, .story3 .story-img {
+      grid-area: img;
+      width: 350px;        /* kleineres Bild */
+      height: 260px;
+      aspect-ratio: 1 / 1;       /* optional: quadratisch */
+      margin:0px;
+    }
 }
 
 </style>
