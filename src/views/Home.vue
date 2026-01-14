@@ -48,6 +48,49 @@ function goToTutors() {
 
     <div class="container section-list my-5 ">
 
+        <!-- ABOUT -->
+  <div class="about">
+    <h3>✨ About us ✨</h3>
+
+    <p>
+      Lernen muss nicht einsam, stressig oder kompliziert sein – und genau deshalb gibt es
+      <strong>CheckMate</strong> 💡
+    </p>
+
+    <p>
+      Unsere Plattform ist aus einer einfachen Idee entstanden:
+      <strong>Gemeinsam lernt es sich leichter.</strong> 🤍  
+      Wir möchten Studierende, Tutor:innen und Lernbegeisterte zusammenbringen, die sich
+      gegenseitig unterstützen, motivieren und weiterbringen.
+    </p>
+
+    <p>
+      Egal ob Prüfungsvorbereitung 📚, Verständnisfragen 🤔 oder der letzte Motivationsschub 💪 –
+      bei CheckMate findest du Menschen, die dich genau dort abholen, wo du gerade stehst.
+      Persönlich, flexibel und auf Augenhöhe.
+    </p>
+
+    <p>
+      Uns ist wichtig, dass Lernen nicht nur effektiv, sondern auch menschlich ist 🤝  
+      Vertrauen, Austausch und ein respektvolles Miteinander stehen bei uns im Mittelpunkt.
+    </p>
+
+    <p>
+      <strong>CheckMate ist mehr als eine Lernplattform.</strong><br />
+      Es ist ein Ort für Fragen 💬, Fortschritt 🚀 und gemeinsames Wachsen 🌱
+    </p>
+
+    <p>
+      Schön, dass du da bist – let’s learn together! 🧠💚
+    </p>
+    <Button variant="accent" :onClick="goToTutors">
+        Hier kommt ihr zu unseren Tutoren
+      </Button>
+       <p>
+    </p>
+   
+  </div>
+
       <!-- ERFOLGSGESCHICHTE 1 -->
       <div class="story1">
         <img
@@ -96,9 +139,7 @@ function goToTutors() {
             aus niedrigeren Semestern bei ihr, die Unterstützung in
             Mathe II und Thermodynamik suchten...
           </p>
-            <Button variant="accent" :onClick="goToTutors">
-        Hier kommt ihr zu unseren Tutoren
-      </Button>
+            
         </div>
       </div>
 
@@ -122,78 +163,9 @@ function goToTutors() {
       
 
 
-      <!-- ABOUT -->
-    <details class="about">
-  <summary>
-    <span>Über uns</span>
-    <span class="chevron" aria-hidden="true"></span>
-  </summary>
+  
 
-  <div class="about-body">
-    <h3>Über CheckMate ♟️✨</h3>
-
-    <p>
-      Lernen muss nicht einsam, stressig oder kompliziert sein – und genau deshalb gibt es
-      <strong>CheckMate</strong> 💡
-    </p>
-
-    <p>
-      Unsere Plattform ist aus einer einfachen Idee entstanden:
-      <strong>Gemeinsam lernt es sich leichter.</strong> 🤍  
-      Wir möchten Studierende, Tutor:innen und Lernbegeisterte zusammenbringen, die sich
-      gegenseitig unterstützen, motivieren und weiterbringen.
-    </p>
-
-    <p>
-      Egal ob Prüfungsvorbereitung 📚, Verständnisfragen 🤔 oder der letzte Motivationsschub 💪 –
-      bei CheckMate findest du Menschen, die dich genau dort abholen, wo du gerade stehst.
-      Persönlich, flexibel und auf Augenhöhe.
-    </p>
-
-    <p>
-      Uns ist wichtig, dass Lernen nicht nur effektiv, sondern auch menschlich ist 🤝  
-      Vertrauen, Austausch und ein respektvolles Miteinander stehen bei uns im Mittelpunkt.
-    </p>
-
-    <p>
-      <strong>CheckMate ist mehr als eine Lernplattform.</strong><br />
-      Es ist ein Ort für Fragen 💬, Fortschritt 🚀 und gemeinsames Wachsen 🌱
-    </p>
-
-    <p>
-      Schön, dass du da bist – let’s learn together! 🧠💚
-    </p>
-  </div>
-</details>
-
-      <!-- KONTAKT -->
-      <details class="contact">
-        <summary>
-          <span>Kontakt</span>
-          <span class="chevron" aria-hidden="true"></span>
-        </summary>
-        <div class="contact-body">
-          <p>
-            Du hast Fragen, Feedback? Schreib uns:
-             <section id="contact">
-              <Contact/>
-             </section>
-          </p>
-        </div>
-      </details>
-
-      <!-- FAQ -->
-      <details class="faq">
-        <summary>
-          <span>FAQ</span>
-          <span class="chevron" aria-hidden="true"></span>
-        </summary>
-        <div class="faq-body">
-          <p>
-            Hier findest du bald Antworten...
-          </p>
-        </div>
-      </details>
+    
     </div>
   </div>
 </template>

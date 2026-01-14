@@ -1,28 +1,14 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue'
-import TutorCard from '@/components/TutorCard.vue'
-import TutorFilter from '@/components/TutorFilter.vue'
-import { useAuth0 } from '@auth0/auth0-vue'
+import { ref, onMounted, computed } from "vue"
+import TutorCard from "@/components/TutorCard.vue"
+import TutorFilter from "@/components/TutorFilter.vue"
+import { useAuth0 } from "@auth0/auth0-vue"
 import { useCartStore } from "@/stores/cart"
 
 const cart = useCartStore()
-//const addedToCart = ref(false)
-
-
-const isThisBookingInCart = computed(() => {
-  if (!selectedTutor.value) return false
-  if (!bookingForm.value.startAt) return false
-
-  return cart.items?.some(it =>
-    it.type === "booking" &&
-    it.tutorId === selectedTutor.value.id &&
-    it.startAt === bookingForm.value.startAt &&
-    it.durationMinutes === bookingForm.value.durationMinutes
-  )
-})
 
 // Basis-URL – entweder aus .env oder fallback auf localhost
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081'
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8081"
 
 // Auth0
 const { getAccessTokenSilently, isAuthenticated, isLoading, loginWithRedirect } = useAuth0()
@@ -38,8 +24,8 @@ const backendProfile = ref(null)
 const isAdmin = ref(false)
 
 // Filter-States
-const searchName = ref('')
-const selectedCategory = ref('') // "" = keine Kategorie → alle anzeigen
+const searchName = ref("")
+const selectedCategory = ref("") // "" = keine Kategorie → alle anzeigen
 
 // Admin: Create Tutor Modal
 const showCreateForm = ref(false)
@@ -47,24 +33,115 @@ const newTutor = ref({
   name: "",
   subject: "",
   semester: 1,
-  image: ""
+  image: "",
 })
 
 // ============================
-// Booking (Stunde buchen) Modal
+// Booking Modal (Datum + Zeit)
 // ============================
 const showBookingModal = ref(false)
 const selectedTutor = ref(null)
 
+const selectedDate = ref("") // "YYYY-MM-DD"
+const availableTimes = ref([]) // ["14:00","14:30",...]
+const selectedTime = ref("") // "HH:mm"
+
 const bookingForm = ref({
-  startAt: "",          // datetime-local value
-  durationMinutes: 60,  // 30/60/90/120
-  note: ""
+  durationMinutes: 60, // 30/60/90/120
+  note: "",
 })
 
 const bookingSubmitting = ref(false)
 const bookingError = ref(null)
 const bookingOk = ref(false)
+
+const filteredAvailableTimes = computed(() => {
+  if (!selectedTutor.value) return availableTimes.value
+  if (!selectedDate.value) return availableTimes.value
+
+  const tutorId = selectedTutor.value.id
+  const dur = Number(bookingForm.value.durationMinutes ?? 60)
+
+  // alle bookings im cart für diesen Tutor + dieses Datum
+  const cartBookingsSameTutorSameDate = (cart.items || []).filter((it) => {
+    if (it.type !== "booking") return false
+    if (it.tutorId !== tutorId) return false
+    const [d] = String(it.startAt || "").split("T")
+    return d === selectedDate.value
+  })
+
+  // wenn nix im Warenkorb liegt -> nichts filtern
+  if (!cartBookingsSameTutorSameDate.length) return availableTimes.value
+
+  // jetzt jede mögliche Zeit prüfen: überschneidet sie sich mit einem Cart-Booking?
+  return availableTimes.value.filter((t) => {
+    const candStart = toMinutes(t)
+
+    const clashes = cartBookingsSameTutorSameDate.some((it) => {
+      const [, itTime] = String(it.startAt || "").split("T")
+      const itStart = toMinutes(itTime)
+      const itDur = Number(it.durationMinutes ?? 0)
+      return overlap(candStart, dur, itStart, itDur)
+    })
+
+    return !clashes
+  })
+})
+
+// ------------------------------------
+// Computed: aktuelles startAt zusammenbauen
+// ------------------------------------
+const computedStartAt = computed(() => {
+  if (!selectedDate.value || !selectedTime.value) return ""
+  return `${selectedDate.value}T${selectedTime.value}`
+})
+
+function toMinutes(hhmm) {
+  const [h, m] = (hhmm || "").split(":").map(Number)
+  return h * 60 + m
+}
+
+function overlap(aStart, aDur, bStart, bDur) {
+  const aEnd = aStart + aDur
+  const bEnd = bStart + bDur
+  return aStart < bEnd && bStart < aEnd
+}
+
+function hasOverlappingBookingInCart(tutorId, dateYYYYMMDD, startHHmm, durationMinutes) {
+  const newStart = toMinutes(startHHmm)
+  const newDur = Number(durationMinutes)
+
+  return (cart.items || []).some((it) => {
+    if (it.type !== "booking") return false
+    if (it.tutorId !== tutorId) return false
+
+    // it.startAt ist bei dir: "YYYY-MM-DDTHH:mm"
+    const [itDate, itTime] = String(it.startAt || "").split("T")
+    if (itDate !== dateYYYYMMDD) return false
+
+    const itStart = toMinutes(itTime)
+    const itDur = Number(it.durationMinutes)
+
+    return overlap(newStart, newDur, itStart, itDur)
+  })
+}
+
+
+// ------------------------------------
+// Computed: ist genau diese Buchung im Cart?
+// ------------------------------------
+const isThisBookingInCart = computed(() => {
+  if (!selectedTutor.value) return false
+  if (!computedStartAt.value) return false
+
+  return cart.items?.some(
+    (it) =>
+      it.type === "booking" &&
+      it.tutorId === selectedTutor.value.id &&
+      it.startAt === computedStartAt.value &&
+      it.durationMinutes === bookingForm.value.durationMinutes
+  )
+})
 
 // Daten laden
 onMounted(async () => {
@@ -75,14 +152,12 @@ onMounted(async () => {
   }
 })
 
-
 // ----------------------------
 // Backend Profile (Role) laden
 // ----------------------------
 async function loadBackendProfile() {
   try {
     const token = await getAccessTokenSilently()
-
     const res = await fetch(`${API_BASE}/api/profile`, {
       headers: { Authorization: `Bearer ${token}` },
     })
@@ -94,13 +169,9 @@ async function loadBackendProfile() {
 
     const profile = await res.json()
     backendProfile.value = profile
-    isAdmin.value = profile?.role === 'ADMIN'
-
-    console.log('BACKEND PROFILE:', profile)
-    console.log('ROLE FROM BACKEND:', profile?.role)
-    console.log('isAdmin (Parent):', isAdmin.value)
+    isAdmin.value = profile?.role === "ADMIN"
   } catch (e) {
-    console.error('Could not load backend profile:', e)
+    console.error("Could not load backend profile:", e)
     backendProfile.value = null
     isAdmin.value = false
   }
@@ -152,8 +223,8 @@ async function fetchTutors() {
     if (!res.ok) throw new Error(`HTTP-Fehler: ${res.status}`)
     tutors.value = await res.json()
   } catch (err) {
-    console.error('Fehler beim Laden der Tutor:innen:', err)
-    error.value = 'Fehler beim Laden der Tutor:innen.'
+    console.error("Fehler beim Laden der Tutor:innen:", err)
+    error.value = "Fehler beim Laden der Tutor:innen."
   } finally {
     loading.value = false
   }
@@ -168,7 +239,7 @@ async function fetchCategories() {
     if (!res.ok) throw new Error(`HTTP-Fehler Kategorien: ${res.status}`)
     categories.value = await res.json()
   } catch (err) {
-    console.error('Fehler beim Laden der Kategorien:', err)
+    console.error("Fehler beim Laden der Kategorien:", err)
   }
 }
 
@@ -181,48 +252,13 @@ const filteredTutors = computed(() => {
   return tutors.value.filter((tutor) => {
     const nameMatches =
       !searchName.value ||
-      (tutor.name || '').toLowerCase().includes(searchName.value.toLowerCase())
+      (tutor.name || "").toLowerCase().includes(searchName.value.toLowerCase())
 
-    const categoryMatches =
-      !selectedCategory.value || tutor.category === selectedCategory.value
+    const categoryMatches = !selectedCategory.value || tutor.category === selectedCategory.value
 
     return nameMatches && categoryMatches
   })
 })
-
-function addBookingToCart() {
-  bookingError.value = null
-  bookingOk.value = false
-
-  try {
-    if (!selectedTutor.value) throw new Error("Kein Tutor ausgewählt.")
-    if (!bookingForm.value.startAt) throw new Error("Bitte Termin auswählen.")
-
-    const rate = Number(selectedTutor.value.hourlyRate ?? 0)
-    const minutes = Number(bookingForm.value.durationMinutes ?? 0)
-    const priceTotal = rate && minutes ? Number((rate * (minutes / 60)).toFixed(2)) : 0
-
-    cart.addBooking({
-      type: "booking",
-      id: `${selectedTutor.value.id}-${bookingForm.value.startAt}-${minutes}`, // eindeutige ID
-      tutorId: selectedTutor.value.id,
-      tutorName: selectedTutor.value.name,
-      subject: selectedTutor.value.subject,
-      startAt: bookingForm.value.startAt,
-      durationMinutes: minutes,
-      hourlyRate: rate,
-      priceTotal,
-      note: bookingForm.value.note,
-      qty: 1,
-      title: `Stunde bei ${selectedTutor.value.name}`,
-    })
-
-    bookingOk.value = true
-    // addedToCart.value = true  // nicht mehr nötig, weil computed es erkennt
-  } catch (e) {
-    bookingError.value = e?.message ?? String(e)
-  }
-}
 
 // Child Filter Event
 function handleTutorUpdate({ name, subject }) {
@@ -231,23 +267,23 @@ function handleTutorUpdate({ name, subject }) {
 }
 
 function handleTutorDeleted(id) {
-  tutors.value = tutors.value.filter(t => t.id !== id)
+  tutors.value = tutors.value.filter((t) => t.id !== id)
 }
 
 // =============================
 // Booking: Modal öffnen/schließen
 // =============================
-function openBookingModal(tutor) {
+async function openBookingModal(tutor) {
   selectedTutor.value = tutor
-  bookingOk.value = false
   bookingError.value = null
-  //addedToCart.value = false
+  bookingOk.value = false
 
-  bookingForm.value = {
-    startAt: "",
-    durationMinutes: 60,
-    note: ""
-  }
+  selectedDate.value = ""
+  availableTimes.value = []
+  selectedTime.value = ""
+
+  bookingForm.value.durationMinutes = 60
+  bookingForm.value.note = ""
 
   showBookingModal.value = true
 }
@@ -257,18 +293,94 @@ function closeBookingModal() {
   selectedTutor.value = null
 }
 
+// ----------------------------
 // Preis berechnen: hourlyRate * duration
+// ----------------------------
 function calcBookingPrice() {
-  const t = selectedTutor.value
-  const rate = Number(t?.hourlyRate ?? 0)
+  const rate = Number(selectedTutor.value?.hourlyRate ?? 0)
   const minutes = Number(bookingForm.value.durationMinutes ?? 0)
-
   if (!rate || !minutes) return "0.00"
   return (rate * (minutes / 60)).toFixed(2)
 }
 
 // =============================
-// Booking: POST ans Backend
+// Available Times laden (Backend)
+// =============================
+async function fetchAvailableTimes() {
+  if (!selectedTutor.value || !selectedDate.value) return
+  
+
+  bookingError.value = null
+  availableTimes.value = []
+  selectedTime.value = ""
+
+  try {
+    const url =
+      `${API_BASE}/api/tutors/${selectedTutor.value.id}/available-times` +
+      `?date=${selectedDate.value}&durationMinutes=${bookingForm.value.durationMinutes}`
+
+    const res = await fetch(url)
+    if (!res.ok) throw new Error(`Times laden fehlgeschlagen: ${res.status}`)
+    
+    availableTimes.value = await res.json()
+
+// Falls die aktuell gewählte Zeit jetzt nicht mehr erlaubt ist -> reset
+if (!filteredAvailableTimes.value.includes(selectedTime.value)) {
+  selectedTime.value = ""
+}
+  } catch (e) {
+    bookingError.value = e?.message ?? String(e)
+  }
+}
+
+// =============================
+// In Warenkorb legen
+// =============================
+function addBookingToCart() {
+  bookingError.value = null
+
+  try {
+    if (!selectedTutor.value) throw new Error("Kein Tutor ausgewählt.")
+    if (!selectedDate.value) throw new Error("Bitte Datum auswählen.")
+    if (!selectedTime.value) throw new Error("Bitte Startuhrzeit auswählen.")
+
+    const rate = Number(selectedTutor.value.hourlyRate ?? 0)
+    const minutes = Number(bookingForm.value.durationMinutes ?? 60)
+    const priceTotal = rate ? (rate * (minutes / 60)).toFixed(2) : "0.00"
+
+    const tutorId = selectedTutor.value.id
+
+if (
+  hasOverlappingBookingInCart(
+    tutorId,
+    selectedDate.value,
+    selectedTime.value,
+    bookingForm.value.durationMinutes
+  )
+) {
+  throw new Error("Dieser Termin überschneidet sich mit einer Buchung im Warenkorb.")
+}
+
+    cart.addBooking({
+      tutorId: selectedTutor.value.id,
+      tutorName: selectedTutor.value.name,
+      subject: selectedTutor.value.subject,
+      startAt: computedStartAt.value, // ✅ richtig!
+      durationMinutes: minutes,
+      hourlyRate: rate,
+      priceTotal: Number(priceTotal),
+      note: bookingForm.value.note,
+      type: "booking",
+    })
+
+    bookingOk.value = true
+  } catch (e) {
+    bookingError.value = e?.message ?? String(e)
+  }
+}
+
+// =============================
+// OPTIONAL: Direkt ans Backend senden (wenn du es später nutzt)
 // =============================
 async function submitBooking() {
   bookingError.value = null
@@ -276,20 +388,19 @@ async function submitBooking() {
   bookingSubmitting.value = true
 
   try {
-    // Nur eingeloggte dürfen buchen
     if (!isAuthenticated.value) {
       await loginWithRedirect({ appState: { target: "/app" } })
       return
     }
 
     if (!selectedTutor.value) throw new Error("Kein Tutor ausgewählt.")
-    if (!bookingForm.value.startAt) throw new Error("Bitte Termin auswählen.")
+    if (!computedStartAt.value) throw new Error("Bitte Datum und Uhrzeit auswählen.")
 
     const token = await getAccessTokenSilently()
 
     const payload = {
       tutorId: selectedTutor.value.id,
-      startAt: bookingForm.value.startAt,
+      startAt: computedStartAt.value,
       durationMinutes: bookingForm.value.durationMinutes,
       price: calcBookingPrice(),
       note: bookingForm.value.note,
@@ -321,14 +432,10 @@ async function submitBooking() {
 <template>
   <div class="tutor-page">
     <div class="container py-4 tutorlist">
-
       <div class="tutor-header-container">
         <div class="filter-top-right">
           <div class="filter-clean">
-            <TutorFilter
-              :subjects="categories"
-              @tutorUpdate="handleTutorUpdate"
-            />
+            <TutorFilter :subjects="categories" @tutorUpdate="handleTutorUpdate" />
           </div>
         </div>
 
@@ -337,9 +444,7 @@ async function submitBooking() {
 
       <!-- ✅ Create-Button nur für Admin -->
       <div class="text-end mb-3" v-if="!isLoading && isAuthenticated && isAdmin">
-        <button class="btn btn-success" @click="showCreateForm = true">
-          + Tutor erstellen
-        </button>
+        <button class="btn btn-success" @click="showCreateForm = true">+ Tutor erstellen</button>
       </div>
 
       <p class="text-end text-light" v-else-if="!isLoading && isAuthenticated && !isAdmin">
@@ -388,70 +493,73 @@ async function submitBooking() {
       </div>
     </div>
   </div>
-<!-- ✅ Booking Modal -->
-<div v-if="showBookingModal" class="modal-backdrop">
-  <div class="modal-content">
-    <h3>Stunde buchen</h3>
 
-    <p v-if="selectedTutor">
-      Tutor: <strong>{{ selectedTutor.name }}</strong><br />
-      Preis: <strong>{{ selectedTutor.hourlyRate ?? '—' }} € / Stunde</strong>
-    </p>
+  <!-- ✅ Booking Modal -->
+  <div v-if="showBookingModal" class="modal-backdrop">
+    <div class="modal-content">
+      <h3>Stunde buchen</h3>
 
-    <label class="form-label">Termin-Vorschlag</label>
-    <input v-model="bookingForm.startAt" type="datetime-local" class="form-control mb-2" />
+      <p v-if="selectedTutor">
+        Tutor: <strong>{{ selectedTutor.name }}</strong><br />
+        Preis: <strong>{{ selectedTutor.hourlyRate ?? "—" }} € / Stunde</strong>
+      </p>
 
-    <label class="form-label">Dauer</label>
-    <select v-model.number="bookingForm.durationMinutes" class="form-control mb-2">
-      <option :value="30">30 Minuten</option>
-      <option :value="60">60 Minuten</option>
-      <option :value="90">90 Minuten</option>
-      <option :value="120">120 Minuten</option>
-    </select>
+      <label class="form-label">Datum wählen</label>
+      <input type="date" v-model="selectedDate" class="form-control mb-2" @change="fetchAvailableTimes" />
 
-    <label class="form-label">Notiz (optional)</label>
-    <textarea v-model="bookingForm.note" class="form-control mb-2" rows="2"></textarea>
+      <label class="form-label">Dauer</label>
+      <select
+        v-model.number="bookingForm.durationMinutes"
+        class="form-control mb-2"
+        @change="fetchAvailableTimes"
+      >
+        <option :value="30">30 Minuten</option>
+        <option :value="60">60 Minuten</option>
+        <option :value="90">90 Minuten</option>
+        <option :value="120">120 Minuten</option>
+      </select>
 
-    <div class="mt-2">
-      Gesamtpreis: <strong>{{ calcBookingPrice() }} €</strong>
-    </div>
-
-    <div class="d-flex gap-2 mt-3">
-      <!-- ✅ v-if und v-else müssen direkt nebeneinander stehen -->
-     <button
-  v-if="!isThisBookingInCart"
-  class="btn btn-success"
-  @click="addBookingToCart"
+      <label class="form-label">Startuhrzeit</label>
+<select
+  v-model="selectedTime"
+  class="form-control mb-2"
+  :disabled="!filteredAvailableTimes.length"
 >
-  In den Warenkorb
-</button>
+  <option value="" disabled>Bitte auswählen…</option>
+  <option v-for="t in filteredAvailableTimes" :key="t" :value="t">
+    {{ t }}
+  </option>
+</select>
 
-<button
-  v-else
-  class="btn btn-outline-primary"
-  @click="$router.push('/checkout')"
->
-  Im Warenkorb ansehen
-</button>
 
-      <button class="btn btn-secondary" @click="closeBookingModal">
-        Schließen
-      </button>
+      <label class="form-label">Notiz (optional)</label>
+      <textarea v-model="bookingForm.note" class="form-control mb-2" rows="2"></textarea>
+
+      <div class="mt-2">Gesamtpreis: <strong>{{ calcBookingPrice() }} €</strong></div>
+
+      <div class="d-flex gap-2 mt-3">
+        <button v-if="!isThisBookingInCart" class="btn btn-success" @click="addBookingToCart">
+          In den Warenkorb
+        </button>
+
+        <button v-else class="btn btn-outline-primary" @click="$router.push('/checkout')">
+          Im Warenkorb ansehen
+        </button>
+
+        <button class="btn btn-secondary" @click="closeBookingModal">Schließen</button>
+      </div>
+
+      <p v-if="bookingOk" class="text-success mt-2">Erfolgreich zum Warenkorb hinzugefügt!</p>
+      <p v-if="bookingError" class="text-danger mt-2">{{ bookingError }}</p>
     </div>
-
-    <p v-if="bookingOk" class="text-success mt-2">
-      Erfolgreich zum Warenkorb hinzugefügt!
-    </p>
-    <p v-if="bookingError" class="text-danger mt-2">{{ bookingError }}</p>
   </div>
-</div>
 </template>
 
 <style scoped>
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.4);
+  background: rgba(0, 0, 0, 0.4);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -464,14 +572,13 @@ async function submitBooking() {
   border-radius: 12px;
   width: 420px;
   max-width: 92vw;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
 }
 
 .tutor-page {
   min-height: 100vh;
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.75)),
-    url('@/assets/img/background.avif');
+  background-image: linear-gradient(rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.75)),
+    url("@/assets/img/background.avif");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -508,13 +615,17 @@ async function submitBooking() {
 }
 
 @media (max-width: 576px) {
-  .tutor-page { padding-top: 2rem; }
+  .tutor-page {
+    padding-top: 2rem;
+  }
   .filter-top-right {
     position: static;
     margin-bottom: 1rem;
     display: flex;
     justify-content: flex-start;
   }
-  .tutor-title { margin-top: 0; }
+  .tutor-title {
+    margin-top: 0;
+  }
 }
 </style>

@@ -9,6 +9,7 @@ import Contact from "@/views/Contact.vue"
 import About from "@/views/About.vue"
 import FAQ from "@/views/FAQ.vue"
 import Datenschutz from "@/views/Datenschutz.vue"
+import AdminTransactions from "@/views/AdminTransactions.vue"
 
 
 const routes = [
@@ -106,7 +107,13 @@ const routes = [
   path: "/datenschutz",
   name: "datenschutz",
   component: Datenschutz
-}
+},
+
+{
+  path: "/admintransactions",
+  name: "admintransactions",
+  component: AdminTransactions
+},
 
 ]
 

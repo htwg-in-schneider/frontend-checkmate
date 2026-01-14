@@ -81,6 +81,7 @@ html, body {
  
 }
 
+
 h1 {
     text-align: center;
     margin-top: 1%;
@@ -174,27 +175,9 @@ details[open] > summary .chevron {
   transform: rotate(-135deg);
 }
 
-/* Inhalt */
-.about-body, .contact-body, .faq-body {
-  padding: 16px;
-  background: #f8f9fa;
-  animation: fadeIn 0.18s ease;
-  font-size: 16px;
-}
 
 
-/* ===== GET THE APP SECTION ===== */
-.getapp {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 40px;
-  padding: 60px 10%;
-  background-color: #ffffff; /* sanft beige Hintergrund, passt zu deinem Stil */
-  border-top: 1px solid #e0dccc;
-  border-bottom: 1px solid #e0dccc;
-  flex-wrap: wrap;
-}
+
 
 /* Textbereich links */
 .getapp-text {
@@ -226,18 +209,21 @@ details[open] > summary .chevron {
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* Farbvarianten */
-.about > summary, .faq > summary {
-  background: #BDCFAA;   /* sanft beige für About */
+.about {
+    text-align: center;
+  color: white;
+  font-style: italic;
+  font-size: 20px;
+  border: 2px solid #BDCFAA;
+  padding: 20px;
+  border-radius: 12px;
+  background-color: #8FA36A;
+  margin: 40px 0; }
+.about h3 {
+  text-align: center;
+  color: white;
+  font-size: 30px;
 }
-.contact > summary {
-  background: #F3EFDF;   /* grünlich-beige für Kontakt */
-}
-
-/* Optionale Hovereffekte */
-.about > summary:hover, .faq > summary:hover { background: #b8c7a5; }
-.contact > summary:hover { background: #E9E3C9; }
-
 
 /* ===== FOOTER ===== */
 .footer {
@@ -396,10 +382,6 @@ details[open] > summary .chevron {
       margin-top: 2vh;
     }
   
-
-    .contact-body, .about-body, .faq-body {
-      text-align: center;
-    }
 
     .qrcode-img, .getapp-img {
       display: none; /* QR-Code ausblenden */

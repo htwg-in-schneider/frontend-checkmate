@@ -41,6 +41,14 @@ function goCheckout() {
 }
 </script>
 <template>
+
+<button
+  v-if="isAuthenticated && isAdmin"
+  class="btn btn-warning ms-2"
+  @click="$router.push('/adminTransactions')"
+>
+  🧾 Alle Transaktionen
+</button>
  
 
   <div class="header">
