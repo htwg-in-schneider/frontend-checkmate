@@ -39,6 +39,11 @@ const cartCount = computed(() => cart.count)
 function goCheckout() {
   router.push("/checkout")
 }
+
+
+function goProfile() {
+  router.push("/edit-profile") // Navigiert direkt zur Profilseite
+}
 </script>
 <template>
 
@@ -57,8 +62,14 @@ function goCheckout() {
     </router-link>
 
     <div class="right-Side">
-      <button id="lang" @click="toggleLanguage">
-        <i class="fa-solid fa-globe"></i> Sprache
+ 
+
+     <button 
+        id="profile-btn" 
+        v-if="isAuthenticated" 
+        @click="goProfile"
+      >
+        <i class="bi bi-person"></i>
       </button>
 
 <button
@@ -102,7 +113,61 @@ function goCheckout() {
   justify-content: space-between;
   align-items: center;
   top: 0;
-  z-index: 100;
+  z-index: 1000;
+}
+/* Dein Profil-Button Style */
+#profile-btn {
+  background-color: grey;
+  color: white;
+  border: 1px solid white;
+  border-radius: 90px;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.3s;
+}
+
+/* Dropdown Logik */
+.user-dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown-content {
+  display: none; /* Standardmäßig versteckt */
+  position: absolute;
+  right: 0;
+  background-color: white;
+  min-width: 160px;
+  box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
+  z-index: 1001;
+  border-radius: 8px;
+  margin-top: 5px;
+}
+
+.dropdown-content button {
+  width: 100%;
+  padding: 12px 16px;
+  border: none;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  color: #333;
+  font-size: 14px;
+}
+
+.dropdown-content button:hover {
+  background-color: #f1f1f1;
+}
+
+/* Zeige Menü bei Hover über den Container */
+.user-dropdown:hover .dropdown-content {
+  display: block;
+}
+
+.logout-item {
+  border-top: 1px solid #eee !important;
+  color: #a46c3a !important; /* Braunton für Logout */
 }
 
   .logo {

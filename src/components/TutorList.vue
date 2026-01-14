@@ -456,12 +456,10 @@ async function submitBooking() {
 
       <div v-else class="row g-4">
         <div v-for="tutor in filteredTutors" :key="tutor.id" class="col-md-4">
-          <TutorCard
-            :tutor="tutor"
-            :is-admin="isAdmin"
-            @deleted="handleTutorDeleted"
-            @book="openBookingModal"
-          />
+          <TutorCard 
+          :tutor="tutor"   
+          :is-admin="isAdmin"
+          @deleted="handleTutorDeleted" />
         </div>
 
         <p v-if="!filteredTutors.length && !loading" class="text-center mt-4">
@@ -470,8 +468,8 @@ async function submitBooking() {
       </div>
 
       <div class="text-center mt-5">
-        <button class="btn btn-outline-secondary" @click="$router.push('/')">
-          Zurück zur Startseite
+        <button class="btn btn-outline-secondary" @click="$router.back()">
+          Zurück
         </button>
       </div>
     </div>
@@ -570,9 +568,8 @@ async function submitBooking() {
   background: white;
   padding: 20px;
   border-radius: 12px;
-  width: 420px;
-  max-width: 92vw;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  width: 400px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
 }
 
 .tutor-page {
@@ -615,17 +612,13 @@ async function submitBooking() {
 }
 
 @media (max-width: 576px) {
-  .tutor-page {
-    padding-top: 2rem;
-  }
+  .tutor-page { padding-top: 2rem; }
   .filter-top-right {
     position: static;
     margin-bottom: 1rem;
     display: flex;
     justify-content: flex-start;
   }
-  .tutor-title {
-    margin-top: 0;
-  }
+  .tutor-title { margin-top: 0; }
 }
 </style>

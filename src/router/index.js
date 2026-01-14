@@ -40,6 +40,23 @@ const routes = [
   },
 
   {
+    path: '/study-partner',
+    name: 'StudentCatalog',
+    component: () => import('@/views/StudentCatalog.vue'),
+    beforeEnter: authGuard,
+  },
+  {
+    path: '/matches',
+    name: 'matches',
+    component: () => import('@/views/Matches.vue'),
+  },
+  {
+  path: '/edit-profile',
+  name: 'EditProfile',
+  component: () => import('../views/EditProfile.vue'), // oder wo deine Datei liegt
+  beforeEnter: authGuard,
+},
+  {
     path: '/tutor',
     name: 'TutorHome',
     component: () => import('@/views/TutorHome.vue'),
@@ -67,12 +84,12 @@ const routes = [
     beforeEnter: authGuard,
   },
 
-  {
-    path: '/profile',
-    name: 'profile',
-    component: () => import('@/views/Profile.vue'),
-    beforeEnter: authGuard,
-  },
+  //{
+    //path: '/profile',
+    //name: 'profile',
+    //component: () => import('@/views/Profile.vue'),
+   // beforeEnter: authGuard,
+  //},
   {
     path: "/checkout",
     name: "checkout",

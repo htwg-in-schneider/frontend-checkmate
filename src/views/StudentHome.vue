@@ -15,6 +15,10 @@ function goTutorSearch() {
 function goLessons() {
   router.push('/unterricht') // Route später anlegen
 }
+
+function goMatches() {
+  router.push('/matches') // Route später anlegen
+}
 </script>
 
 <template>
@@ -33,6 +37,11 @@ function goLessons() {
       <button class="card card3" @click="goLessons">
         <span>Unterrichts -<br />stunden</span>
       </button>
+
+      <button class="card card3" @click="goMatches">
+        <span>Meine Matches</span>
+      </button>
+
     </div>
   </main>
 
@@ -46,6 +55,7 @@ function goLessons() {
   display: flex;
   justify-content: center;
   padding: 2rem 1rem;
+  overflow: visible;
 }
 
 .cards {
