@@ -11,8 +11,7 @@ import FooterLink from './FooterLink.vue';
 
       <!-- Links: jetzt mit FooterLink-Komponente -->
       <nav class="footer-links">
-        <FooterLink text="About us" label="Über uns" href="/about" />
-        <span aria-hidden="true" class="divider">|</span>
+
 
         <FooterLink text="FAQ" label="FAQ" href="/faq" />
         <span aria-hidden="true" class="divider">|</span>

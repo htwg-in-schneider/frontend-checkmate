@@ -3,11 +3,11 @@ import { ref, onMounted } from "vue"
 import { useAuth0 } from "@auth0/auth0-vue"
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8081"
-const { getAccessTokenSilently } = useAuth0()
+const { getAccessTokenSilently, isAuthenticated, loginWithRedirect } = useAuth0()
 
 const loading = ref(true)
 const error = ref(null)
-const rows = ref([])
+const bookings = ref([])
 
 onMounted(() => {
   load()
@@ -16,16 +16,24 @@ onMounted(() => {
 async function load() {
   loading.value = true
   error.value = null
+
   try {
+    if (!isAuthenticated.value) {
+      await loginWithRedirect({ appState: { target: "/unterricht" } })
+      return
+    }
+
     const token = await getAccessTokenSilently()
-    const res = await fetch(`${API_BASE}/api/admin/bookings`, {
+    const res = await fetch(`${API_BASE}/api/my/bookings`, {
       headers: { Authorization: `Bearer ${token}` },
     })
+
     if (!res.ok) {
       const txt = await res.text().catch(() => "")
       throw new Error(`${res.status}: ${txt}`)
     }
-    rows.value = await res.json()
+
+    bookings.value = await res.json()
   } catch (e) {
     error.value = e?.message ?? String(e)
   } finally {
@@ -34,28 +42,28 @@ async function load() {
 }
 
 /**
- * Robust für startAt/createdAt:
- * - ISO string ("2026-01-15T14:00" / "...:00" / mit ".SSS")
- * - "YYYY-MM-DD HH:mm"
- * - Array (Jackson): [2026,1,15,14,0,(sec?)]
+ * Robust: unterstützt startAt als
+ * - ISO-String: "2026-01-15T14:00" / "2026-01-15T14:00:00"
+ * - String mit Space: "2026-01-15 14:00"
+ * - Array (Jackson timestamps): [2026,1,15,14,0,(sec?)]
  */
-function formatDateTime(dt) {
-  if (!dt) return "—"
+function formatStartAtRaw(startAt) {
+  if (!startAt) return "—"
 
   // ✅ Falls Backend LocalDateTime als Array liefert
-  if (Array.isArray(dt)) {
-    const [y, mo, d, h = 0, mi = 0] = dt
+  if (Array.isArray(startAt)) {
+    const [y, mo, d, h = 0, mi = 0] = startAt
     const pad = (n) => String(n).padStart(2, "0")
     return `${pad(d)}.${pad(mo)}.${y} ${pad(h)}:${pad(mi)}`
   }
 
-  const s0 = String(dt).trim()
+  const s0 = String(startAt).trim()
   if (!s0) return "—"
 
   // "2026-01-15 14:00" -> "2026-01-15T14:00"
   let normalized = s0.replace(" ", "T")
 
-  // Millisekunden abschneiden (z.B. ".123")
+  // optional: Millisekunden abschneiden
   normalized = normalized.replace(/(\.\d+)?$/, "")
 
   const [datePart, timePartFull] = normalized.split("T")
@@ -71,23 +79,25 @@ function formatDateTime(dt) {
 
 <template>
   <div class="container py-4">
-    <h1>Alle Transaktionen / Buchungen (Admin)</h1>
+    <h1>Meine Unterrichtsstunden</h1>
 
-    <p v-if="loading">Lade…</p>
+    <p v-if="loading">Lade Buchungen…</p>
     <p v-else-if="error" class="text-danger">{{ error }}</p>
 
     <div v-else>
-      <p v-if="!rows.length">Keine Daten.</p>
+      <p v-if="!bookings.length">Du hast noch keine Buchungen.</p>
 
-      <div v-for="b in rows" :key="b.id" class="border rounded p-3 mb-2">
-        <div><strong>Tutor:</strong> {{ b.tutorName }} (ID {{ b.tutorId }})</div>
-        <div><strong>Student:</strong> {{ b.studentName }} ({{ b.studentOauthId }})</div>
-        <div>
-          <strong>Termin:</strong> {{ formatDateTime(b.startAt) }} • {{ b.durationMinutes }} Min
+      <div v-for="b in bookings" :key="b.id" class="border rounded p-3 mb-2">
+        <div class="d-flex justify-content-between">
+          <div>
+            <strong>{{ b.tutorName }}</strong>
+            <div class="text-muted">
+              Termin: {{ formatStartAtRaw(b.startAt) }} • {{ b.durationMinutes }} Min
+            </div>
+            <div>Preis: {{ Number(b.price ?? 0).toFixed(2) }} €</div>
+            <div v-if="b.note" class="text-muted">Notiz: {{ b.note }}</div>
+          </div>
         </div>
-        <div><strong>Preis:</strong> {{ Number(b.price ?? 0).toFixed(2) }} €</div>
-        <div v-if="b.note"><strong>Notiz:</strong> {{ b.note }}</div>
-        <div class="text-muted small">Erstellt: {{ formatDateTime(b.createdAt) }}</div>
       </div>
     </div>
   </div>

@@ -216,6 +216,52 @@ async function dislikeStudent(s) {
 </template>
 
 <style scoped>
+
+/* ===== Filter-Layout wie TutorList ===== */
+.header-container {
+  position: relative;
+  margin-bottom: 2rem;
+}
+
+.filter-top-right {
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+
+.filter-clean ::v-deep .tutor-filter-box {
+  border: none !important;
+  background: transparent !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* optional: gleiche Optik wie eure TutorList-Header */
+.page-title {
+  color: #111;
+  margin: 0;
+}
+.page-subtitle {
+  margin: 0.5rem 0 0;
+  color: #444;
+}
+
+/* Mobile: Filter oben normal einreihen */
+@media (max-width: 576px) {
+  .filter-top-right {
+    position: static;
+    margin-bottom: 1rem;
+    display: flex;
+    justify-content: flex-start;
+  }
+}
+
+
+
+
+
+
+
 /* optional: kleine UI-Verbesserungen */
 .card {
   border-radius: 14px;

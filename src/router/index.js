@@ -10,6 +10,8 @@ import About from "@/views/About.vue"
 import FAQ from "@/views/FAQ.vue"
 import Datenschutz from "@/views/Datenschutz.vue"
 import AdminTransactions from "@/views/AdminTransactions.vue"
+import Unterricht from "@/views/Unterricht.vue"
+import Message from "@/views/Message.vue"
 
 
 const routes = [
@@ -127,10 +129,21 @@ const routes = [
 },
 
 {
-  path: "/admintransactions",
-  name: "admintransactions",
-  component: AdminTransactions
-},
+    path: "/admintransactions",
+    name: "admintransactions",
+    component: AdminTransactions
+  },
+  {
+    path: "/unterricht",
+    name: "unterricht",
+    component: Unterricht
+  },
+
+  {
+    path: "/message",
+    name: "message",
+    component: Message
+  }
 
 ]
 

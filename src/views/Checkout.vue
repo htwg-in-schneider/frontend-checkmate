@@ -2,17 +2,19 @@
 import { ref, computed } from "vue"
 import { useCartStore } from "@/stores/cart"
 import { useAuth0 } from "@auth0/auth0-vue"
+import { useRouter } from "vue-router"
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8081"
 const cart = useCartStore()
+const router = useRouter()
+
 const { isAuthenticated, loginWithRedirect, getAccessTokenSilently, user } = useAuth0()
 
 // nur Bookings anzeigen/verschicken
 const bookingItems = computed(() => (cart.items || []).filter((it) => it.type === "booking"))
 
-// total: entweder aus store oder berechnet (falls cart.total nicht passt)
+// total berechnet aus bookingItems
 const total = computed(() => {
-  // wenn du cart.total schon korrekt hast, kannst du das hier auch einfach: return cart.total
   return bookingItems.value.reduce((sum, it) => sum + Number(it.priceTotal || 0), 0)
 })
 
@@ -28,18 +30,54 @@ function isValidEmail(v) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(v).trim())
 }
 
-// macht aus "2026-01-15T14:00" -> "2026-01-15T14:00:00"
+/**
+ * Anzeige ohne Date()-Parsing (robust gegen LocalDateTime mit Nano-Sekunden)
+ * Akzeptiert z.B.
+ * - 2026-01-15T14:00
+ * - 2026-01-15 14:00
+ * - 2026-01-15T14:00:00
+ * - 2026-01-15T14:00:00.123456789
+ */
+function formatStartAt(startAt) {
+  const s0 = String(startAt || "").trim()
+  if (!s0) return ""
+
+  let s = s0.replace(" ", "T")
+  s = s.replace(/\.\d+$/, "") // Nanoseconds weg
+
+  const [datePart, timePartFull] = s.split("T")
+  if (!datePart || !timePartFull) return s0
+
+  const time = timePartFull.slice(0, 5) // HH:mm
+  const [y, m, d] = datePart.split("-")
+  if (!y || !m || !d) return s0
+
+  return `${d}.${m}.${y} ${time}`
+}
+
+/**
+ * Für Spring LocalDateTime:
+ * - ersetzt " " -> "T"
+ * - schneidet Nanoseconds ab
+ * - ergänzt Sekunden, wenn nur HH:mm vorhanden ist
+ */
 function normalizeStartAt(startAt) {
-  const s = String(startAt || "")
+  let s = String(startAt || "").trim()
+  if (!s) return s
+
+  s = s.replace(" ", "T")
+  s = s.replace(/\.\d+$/, "") // Nanoseconds weg
+
+  // wenn kein T drin ist, lassen wir es wie es ist
   if (!s.includes("T")) return s
-  // wenn schon Sekunden drin sind, nichts ändern
-  if (/T\d{2}:\d{2}:\d{2}$/.test(s)) return s
-  // wenn nur HH:mm drin ist -> Sekunden ergänzen
+
+  // Sekunden ergänzen, falls nur HH:mm vorhanden
   if (/T\d{2}:\d{2}$/.test(s)) return `${s}:00`
+
   return s
 }
 
-async function submitTransaction() {
+async function submitOrder() {
   error.value = null
   ok.value = false
   submitting.value = true
@@ -50,30 +88,24 @@ async function submitTransaction() {
       return
     }
 
-    if (!bookingItems.value.length) {
-      throw new Error("Warenkorb ist leer.")
-    }
-
-    if (!isValidEmail(buyerEmail.value)) {
-      throw new Error("Bitte gib eine gültige Email ein (oder lass das Feld leer).")
-    }
+    if (!bookingItems.value.length) throw new Error("Warenkorb ist leer.")
 
     const token = await getAccessTokenSilently()
 
-    // ✅ Payload so, wie das Backend DTO es erwartet
     const payload = {
-      buyerEmail: buyerEmail.value || null,
-      note: checkoutNote.value,
-      items: bookingItems.value.map((it) => ({
+      buyerEmail: buyerEmail.value || "",
+      note: checkoutNote.value || "",
+      bookings: bookingItems.value.map((it) => ({
         tutorId: it.tutorId,
         tutorName: it.tutorName,
-        startAt: normalizeStartAt(it.startAt),
+        startAt: it.startAt, // dein Backend nimmt LocalDateTime
         durationMinutes: Number(it.durationMinutes),
         price: Number(it.priceTotal),
+        note: it.note || "",
       })),
     }
 
-    const res = await fetch(`${API_BASE}/api/transactions`, {
+    const res = await fetch(`${API_BASE}/api/transactions/checkout`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -83,18 +115,25 @@ async function submitTransaction() {
     })
 
     if (!res.ok) {
-      // wenn dein GlobalExceptionHandler JSON liefert, sieht man damit die Feldfehler
-      const text = await res.text().catch(() => "")
-      throw new Error(`Backend ${res.status}: ${text}`)
+      const txt = await res.text().catch(() => "")
+      throw new Error(`Checkout fehlgeschlagen (${res.status}): ${txt}`)
     }
 
     ok.value = true
     cart.clear()
+    router.push("/unterricht") // ✅ direkt weiter
   } catch (e) {
     error.value = e?.message ?? String(e)
   } finally {
     submitting.value = false
   }
+}
+
+function removeItem(it) {
+  // cart.remove erwartet bei dir vermutlich einen "key"
+  // falls key fehlt -> fallback über startAt+tutorId (wie in :key)
+  const k = it?.key || `${it?.startAt}-${it?.tutorId}`
+  cart.remove(k)
 }
 </script>
 
@@ -107,23 +146,25 @@ async function submitTransaction() {
     <div v-else>
       <h3>Deine Buchungen</h3>
 
-      <div v-for="it in bookingItems" :key="it.key || it.startAt + '-' + it.tutorId" class="border rounded p-2 mb-2">
+      <div
+        v-for="it in bookingItems"
+        :key="it.key || it.startAt + '-' + it.tutorId"
+        class="border rounded p-2 mb-2"
+      >
         <div class="d-flex justify-content-between">
           <div>
             <strong>{{ it.tutorName }}</strong>
             <div class="text-muted">
-              {{ it.subject }} • {{ it.durationMinutes }} Min • Termin: {{ it.startAt }}
+              {{ it.subject }} • {{ it.durationMinutes }} Min • Termin: {{ formatStartAt(it.startAt) }}
             </div>
             <div>Preis: {{ Number(it.priceTotal).toFixed(2) }} €</div>
             <div v-if="it.note" class="text-muted">Notiz: {{ it.note }}</div>
           </div>
 
           <div class="d-flex gap-2 align-items-start">
-            <!-- Wenn du qty/inc/dec für bookings NICHT willst: diese 2 Buttons entfernen -->
-            <button v-if="cart.dec" class="btn btn-sm btn-outline-secondary" @click="cart.dec(it.key)">-</button>
-            <button v-if="cart.inc" class="btn btn-sm btn-outline-secondary" @click="cart.inc(it.key)">+</button>
-
-            <button class="btn btn-sm btn-outline-danger" @click="cart.remove(it.key)">Entfernen</button>
+            <button class="btn btn-sm btn-outline-danger" @click="removeItem(it)">
+              Entfernen
+            </button>
           </div>
         </div>
       </div>
@@ -138,12 +179,16 @@ async function submitTransaction() {
 
       <div class="mt-3"><strong>Total:</strong> {{ total.toFixed(2) }} €</div>
 
-      <button class="btn btn-success mt-3" :disabled="submitting" @click="submitTransaction">
+      <button class="btn btn-success mt-3" :disabled="submitting" @click="submitOrder">
         {{ submitting ? "Sende..." : "Buchungen absenden" }}
       </button>
 
       <p v-if="ok" class="text-success mt-2">Transaktion gespeichert ✅</p>
-      <p v-if="error" class="text-danger mt-2">{{ error }}</p>
+
+      <!-- ✅ Fehlertext sinnvoll anzeigen -->
+      <p v-if="error" class="text-danger mt-2">
+        {{ error.includes("409") ? "Termin leider nicht mehr verfügbar" : error }}
+      </p>
     </div>
   </div>
 </template>
