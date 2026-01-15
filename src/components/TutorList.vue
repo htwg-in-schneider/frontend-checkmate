@@ -20,6 +20,7 @@ const error = ref(null)
 const backendProfile = ref(null)
 const isAdmin = ref(false)
 
+// Filter-States (kommen aus TutorFilter)
 const searchName = ref("")
 const selectedCategory = ref("")
 
@@ -219,8 +220,14 @@ const filteredTutors = computed(() => {
   if (!searchName.value && !selectedCategory.value) return tutors.value
   return tutors.value.filter((tutor) => {
     const nameMatches =
-      !searchName.value || (tutor.name || "").toLowerCase().includes(searchName.value.toLowerCase())
-    const categoryMatches = !selectedCategory.value || tutor.category === selectedCategory.value
+      !searchName.value ||
+      (tutor.name || "").toLowerCase().includes(searchName.value.toLowerCase())
+
+    // TutorFilter gibt "subject" zurück -> bei euch steckt es in "category"
+    // (weil /api/category aus dem Backend kommt). Daher: tutor.category
+    const categoryMatches =
+      !selectedCategory.value || tutor.category === selectedCategory.value
+
     return nameMatches && categoryMatches
   })
 })
@@ -234,7 +241,7 @@ function handleTutorDeleted(id) {
   tutors.value = tutors.value.filter((t) => t.id !== id)
 }
 
-// ✅ HIER: Kontaktieren -> Nachrichten-Seite (Option 1)
+// ✅ Kontaktieren -> Nachrichten-Seite
 function openContact(tutor) {
   if (!tutor?.id) return
   router.push({ path: "/messages", query: { tutorId: tutor.id } })
@@ -261,11 +268,6 @@ async function openBookingModal(tutor) {
 function closeBookingModal() {
   showBookingModal.value = false
   selectedTutor.value = null
-}
-
-function openMessagesForTutor(tutor) {
-  if (!tutor?.id) return
-  router.push({ path: "/messages", query: { tutorId: tutor.id } })
 }
 
 async function reloadDates() {
@@ -373,48 +375,54 @@ watch(
 </script>
 
 <template>
-  <div class="tutor-page">
-    <div class="container py-4 tutorlist">
-      <div class="tutor-header-container">
-        <div class="filter-top-right">
-          <div class="filter-clean">
-            <TutorFilter :subjects="categories" @tutorUpdate="handleTutorUpdate" />
-          </div>
-        </div>
+  <Navbar />
 
-        <h1 class="tutor-title">Unsere Tutor:innen</h1>
+  <!-- Header wie Student-Seite -->
+  <section class="py-5 text-center">
+    <div class="container">
+      <h2 class="fw-bold">Tutor:innen suchen</h2>
+      <p>Tutor:innen auf der Suche</p>
+    </div>
+  </section>
+
+  <!-- ✅ Filter: direkt einbinden (NICHT in absolute wrapper), damit es groß aufklappen kann -->
+  <TutorFilter :subjects="categories" @tutorUpdate="handleTutorUpdate" />
+
+  <div class="container py-4 tutorlist">
+    <!-- ✅ Button nur für Admin -->
+    <div class="text-end mb-3" v-if="!isLoading && isAuthenticated && isAdmin">
+      <button class="btn btn-success" @click="showCreateForm = true">
+        + Tutor erstellen
+      </button>
+    </div>
+
+    <p class="text-end text-muted" v-else-if="!isLoading && isAuthenticated && !isAdmin">
+      (Nur Admins können Tutor:innen erstellen.)
+    </p>
+
+    <p v-if="loading" class="text-center">Lade Tutor:innen…</p>
+    <p v-else-if="error" class="text-center text-danger">{{ error }}</p>
+
+    <div v-else class="row g-4">
+      <div v-for="tutor in filteredTutors" :key="tutor.id" class="col-md-4">
+        <TutorCard
+          :tutor="tutor"
+          :is-admin="isAdmin"
+          @deleted="handleTutorDeleted"
+          @book="openBookingModal"
+          @contact="openContact"
+        />
       </div>
 
-      <div class="text-end mb-3" v-if="!isLoading && isAuthenticated && isAdmin">
-        <button class="btn btn-success" @click="showCreateForm = true">+ Tutor erstellen</button>
-      </div>
-
-      <p class="text-end text-light" v-else-if="!isLoading && isAuthenticated && !isAdmin">
-        (Nur Admins können Tutor:innen erstellen.)
+      <p v-if="!filteredTutors.length && !loading" class="text-center mt-4">
+        Keine Tutor:innen gefunden. Passe Suche oder Kategorie an.
       </p>
+    </div>
 
-      <p v-if="loading" class="text-center">Lade Tutor:innen…</p>
-      <p v-else-if="error" class="text-center text-danger">{{ error }}</p>
-
-      <div v-else class="row g-4">
-        <div v-for="tutor in filteredTutors" :key="tutor.id" class="col-md-4">
-          <TutorCard
-            :tutor="tutor"
-            :is-admin="isAdmin"
-            @deleted="handleTutorDeleted"
-            @book="openBookingModal"
-            @contact="openContact"
-          />
-        </div>
-
-        <p v-if="!filteredTutors.length && !loading" class="text-center mt-4">
-          Keine Tutor:innen gefunden. Passe Suche oder Kategorie an.
-        </p>
-      </div>
-
-      <div class="text-center mt-5">
-        <button class="btn btn-outline-secondary" @click="$router.back()">Zurück</button>
-      </div>
+    <div class="text-center mt-5">
+      <button class="btn btn-outline-secondary" @click="$router.back()">
+        Zurück
+      </button>
     </div>
   </div>
 
@@ -425,7 +433,12 @@ watch(
 
       <input v-model="newTutor.name" class="form-control mb-2" placeholder="Name" />
       <input v-model="newTutor.subject" class="form-control mb-2" placeholder="Fach" />
-      <input v-model="newTutor.semester" type="number" class="form-control mb-2" placeholder="Semester" />
+      <input
+        v-model="newTutor.semester"
+        type="number"
+        class="form-control mb-2"
+        placeholder="Semester"
+      />
       <input v-model="newTutor.image" class="form-control mb-2" placeholder="Bild-URL" />
 
       <div class="d-flex gap-2 mt-3">
@@ -500,9 +513,14 @@ watch(
       <p v-if="bookingError" class="text-danger mt-2">{{ bookingError }}</p>
     </div>
   </div>
+
+  <Footer />
 </template>
 
 <style scoped>
+/* ✅ wichtigste Änderung: KEIN filter-top-right / filter-clean mehr,
+   weil das die große Filterbox kaputt macht. TutorFilter steuert das selbst. */
+
 .modal-backdrop {
   position: fixed;
   inset: 0;
@@ -519,56 +537,19 @@ watch(
   border-radius: 12px;
   width: 400px;
   max-width: 92vw;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
 }
 
+/* Optional: wenn du weiterhin Hintergrundbild willst */
 .tutor-page {
   min-height: 100vh;
-  background-image: linear-gradient(rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.75)),
-    url("@/assets/img/background.avif");
+  background-image:
+     linear-gradient(rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.75)),
+    url('@/assets/img/background.avif');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  padding-top: 4rem;
-  padding-bottom: 4rem;
-}
-
-.tutor-header-container {
-  position: relative;
-  margin-bottom: 2rem;
-}
-
-.tutor-title {
-  font-family: sans-serif;
-  font-size: 80px;
-  font-weight: 600;
-  color: white !important;
-  letter-spacing: 0.8px;
-  text-align: left;
-  text-shadow: 0 0 12px #607953;
-}
-
-.filter-top-right {
-  position: absolute;
-  top: 0;
-  right: 0;
-}
-
-.filter-clean ::v-deep .tutor-filter-box {
-  border: none !important;
-  background: transparent !important;
-  padding: 0 !important;
-  margin: 0 !important;
-}
-
-@media (max-width: 576px) {
-  .tutor-page { padding-top: 2rem; }
-  .filter-top-right {
-    position: static;
-    margin-bottom: 1rem;
-    display: flex;
-    justify-content: flex-start;
-  }
-  .tutor-title { margin-top: 0; }
+  padding-top: 2rem;
+  padding-bottom: 2rem;
 }
 </style>

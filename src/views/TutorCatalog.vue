@@ -1,88 +1,76 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed } from 'vue'
 
-import Navbar from '@/components/Navbar.vue';
-import Footer from '@/components/Footer.vue';
-import TutorFilter from '@/components/TutorFilter.vue';
-import TutorReviews from '@/components/TutorReviews.vue';
+import Navbar from '@/components/Navbar.vue'
+import Footer from '@/components/Footer.vue'
+import TutorFilter from '@/components/TutorFilter.vue'
+import TutorReviews from '@/components/TutorReviews.vue'
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL 
-//|| 'http://localhost:8081';
-const url = `${API_BASE}/api/tutors`;
+const API_BASE = import.meta.env.VITE_API_BASE_URL
+const url = `${API_BASE}/api/tutors`
 
 // komplette Liste aus dem Backend
-const tutors = ref([]);
+const tutors = ref([])
 // gefilterte Liste für die Anzeige
-const filteredTutors = ref([]);
-const error = ref(null);
-const loading = ref(true);
+const filteredTutors = ref([])
+const error = ref(null)
+const loading = ref(true)
 
-onMounted(fetchTutors);
+onMounted(fetchTutors)
 
 async function fetchTutors() {
-  loading.value = true;
-  error.value = null;
+  loading.value = true
+  error.value = null
   try {
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    const data = await response.json();
-    tutors.value = data;
-    filteredTutors.value = data; // initial: alles anzeigen
-    console.log('Tutoren geladen:', data);
+    const response = await fetch(url)
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`)
+    const data = await response.json()
+    tutors.value = data
+    filteredTutors.value = data // initial: alles anzeigen
   } catch (err) {
-    console.error('Error fetching tutors:', err);
-    error.value = 'Tutor:innen konnten nicht geladen werden.';
+    console.error('Error fetching tutors:', err)
+    error.value = 'Tutor:innen konnten nicht geladen werden.'
   } finally {
-    loading.value = false;
+    loading.value = false
   }
 }
 
-// alle verfügbaren Fächer (Subjects) aus den Tutoren bauen
+// verfügbare Themen/Fächer aus den Tutoren bauen
 const availableSubjects = computed(() =>
   Array.from(new Set(tutors.value.map((t) => t.subject).filter(Boolean)))
-);
+)
 
-// wird vom Filter-Component aufgerufen
+// wird vom Filter-Component aufgerufen (TutorFilter feuert @tutorUpdate)
 function handleTutorUpdate(filter) {
   if (!filter || (!filter.name && !filter.subject)) {
-    filteredTutors.value = tutors.value;
-    return;
+    filteredTutors.value = tutors.value
+    return
   }
 
-  const name = (filter.name || '').toLowerCase();
-  const subject = filter.subject || '';
+  const name = (filter.name || '').toLowerCase()
+  const subject = filter.subject || ''
 
   filteredTutors.value = tutors.value.filter((t) => {
-    const matchesName =
-      !name || (t.name || '').toLowerCase().includes(name);
-    const matchesSubject =
-      !subject || t.subject === subject;
-    return matchesName && matchesSubject;
-  });
+    const matchesName = !name || (t.name || '').toLowerCase().includes(name)
+    const matchesSubject = !subject || t.subject === subject
+    return matchesName && matchesSubject
+  })
 }
 </script>
 
 <template>
   <Navbar />
 
-  <!-- Header -->
+  <!-- Header (wie Student-Seite) -->
   <section class="py-5 text-center">
     <div class="container">
-      <h2 class="fw-bold">Unsere Tutor:innen</h2>
-      <p>
-        Finde die passende Unterstützung für dein Studium – einfach, persönlich
-        und effektiv.
-      </p>
+      <h2 class="fw-bold">Tutor:innen suchen</h2>
+      <p>Tutor:innen auf der Suche</p>
     </div>
   </section>
 
-  <!-- Filter -->
-  <TutorFilter
-    :subjects="availableSubjects"
-    @tutorUpdate="handleTutorUpdate"
-  />
+  <!-- Filter (WICHTIG: ohne absolute wrapper, damit die Box groß aufgehen kann) -->
+  <TutorFilter :subjects="availableSubjects" @tutorUpdate="handleTutorUpdate" />
 
   <div class="container py-4">
     <!-- Lade- & Fehlerzustände -->
@@ -91,12 +79,7 @@ function handleTutorUpdate(filter) {
 
     <!-- Tutor Grid -->
     <div v-else class="row g-4">
-      <div
-        v-for="tutor in filteredTutors"
-        :key="tutor.id"
-        class="col-md-4"
-      >
-        <!-- einfache Card direkt hier, ohne extra Komponente -->
+      <div v-for="tutor in filteredTutors" :key="tutor.id" class="col-md-4">
         <div class="card shadow-sm h-100">
           <img
             :src="tutor.image"
@@ -110,7 +93,7 @@ function handleTutorUpdate(filter) {
             <p class="card-text">{{ tutor.subject }}</p>
             <p class="text-muted small">Semester: {{ tutor.semester }}</p>
 
-            <!-- ⭐ Reviews direkt unter dem Tutor -->
+            <!-- ⭐ Reviews -->
             <TutorReviews :tutor-id="tutor.id" />
 
             <button
@@ -123,17 +106,23 @@ function handleTutorUpdate(filter) {
         </div>
       </div>
 
-      <p
-        v-if="!filteredTutors.length && !loading"
-        class="text-center mt-4"
-      >
+      <p v-if="!filteredTutors.length && !loading" class="text-center mt-4">
         Keine Tutor:innen gefunden. Passe die Filter an.
       </p>
     </div>
+
+    <!-- Optional: Zurück Button wie bei Student-Seite -->
+    <div class="text-center mt-5">
+      <button class="btn btn-outline-secondary" @click="$router.back()">
+        Zurück
+      </button>
+    </div>
   </div>
 
+  <Footer />
 </template>
 
 <style scoped>
-/* optional */
+/* Nichts "filter-top-right" / "filter-clean" hier!
+   Der TutorFilter macht den Button rechts und die große Box selbst. */
 </style>
