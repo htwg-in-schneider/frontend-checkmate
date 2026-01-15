@@ -12,6 +12,8 @@ import Datenschutz from "@/views/Datenschutz.vue"
 import AdminTransactions from "@/views/AdminTransactions.vue"
 import Unterricht from "@/views/Unterricht.vue"
 import Messages from "@/views/Messages.vue"
+import AngebotErstellen from "@/views/AngebotErstellen.vue"
+import MeineAngebote from "@/views/MeineAngebote.vue"
 
 
 const routes = [
@@ -143,7 +145,18 @@ const routes = [
     path: "/messages",
     name: "messages",
     component: Messages
-  }
+  },
+
+ 
+
+{
+  path: "/angebot-erstellen",
+  component: AngebotErstellen,
+},
+{
+  path: "/meine-angebote",
+  component: MeineAngebote,
+}
 
 ]
 
