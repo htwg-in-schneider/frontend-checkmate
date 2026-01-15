@@ -170,7 +170,7 @@ onBeforeUnmount(() => document.removeEventListener("click", onDocumentClick))
            <button class="menu-item" @click="go('/tutoren')">Tutor suchen</button>
            <button class="menu-item" @click="go('/unterricht')">Unterrichtsstunden</button>
            <button class="menu-item" @click="go('/matches')">Meine Matches</button>
-           <button class="menu-item" @click="go('/message')">Nachrichten</button>
+           <button class="menu-item" @click="go('/messages')">Nachrichten</button>
 
            <button v-if="isAdmin" class="menu-item admin" @click="go('/adminTransactions')">
              Alle Transaktionen
