@@ -20,7 +20,7 @@ const onLoginClick = () => {
 }
 
 const onLogoutClick = () => {
-  logout({ logoutParams: { returnTo: window.location.origin } })
+  logout({ logoutParams: { returnTo: window.location.origin + "/frontend-checkmate/" } })
 }
 
 const toggleLanguage = () => {
