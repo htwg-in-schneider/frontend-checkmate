@@ -1,35 +1,28 @@
 <script setup>
-import { ref, onMounted, computed, watch, onBeforeUnmount } from "vue"
+import { ref, onMounted, computed, watch } from "vue"
 import TutorCard from "@/components/TutorCard.vue"
 import TutorFilter from "@/components/TutorFilter.vue"
 import { useAuth0 } from "@auth0/auth0-vue"
 import { useCartStore } from "@/stores/cart"
 import { useRouter } from "vue-router"
-const router = useRouter()
 
+const router = useRouter()
 const cart = useCartStore()
 
-// Basis-URL – entweder aus .env oder fallback auf localhost
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8081"
-
-// Auth0
 const { getAccessTokenSilently, isAuthenticated, isLoading } = useAuth0()
 
-// State
 const tutors = ref([])
 const categories = ref([])
 const loading = ref(true)
 const error = ref(null)
 
-// Role / Profile
 const backendProfile = ref(null)
 const isAdmin = ref(false)
 
-// Filter-States
 const searchName = ref("")
-const selectedCategory = ref("") // "" = keine Kategorie → alle anzeigen
+const selectedCategory = ref("")
 
-// Admin: Create Tutor Modal
 const showCreateForm = ref(false)
 const newTutor = ref({
   name: "",
@@ -44,37 +37,32 @@ const newTutor = ref({
 const showBookingModal = ref(false)
 const selectedTutor = ref(null)
 
-// Dropdown Dates
-const availableDates = ref([]) // ["2026-01-15","2026-01-16",...]
-const selectedDate = ref("") // "YYYY-MM-DD"
+const availableDates = ref([])
+const selectedDate = ref("")
 
-// Times
-const availableTimes = ref([]) // ["14:00","14:30",...]
-const selectedTime = ref("") // "HH:mm"
+const availableTimes = ref([])
+const selectedTime = ref("")
 
 const bookingForm = ref({
-  durationMinutes: 60, // 30/60/90/120
+  durationMinutes: 60,
   note: "",
 })
 
 const bookingError = ref(null)
 const bookingOk = ref(false)
 
-// ------------------------------------
-// Computed: aktuelles startAt zusammenbauen
-// ------------------------------------
 const computedStartAt = computed(() => {
   if (!selectedDate.value || !selectedTime.value) return ""
   return `${selectedDate.value}T${selectedTime.value}`
 })
 
-// sobald irgendeine Buchung dieses Tutors im Warenkorb liegt
 const hasAnyBookingInCart = computed(() => {
   if (!selectedTutor.value) return false
-  return (cart.items || []).some((it) => it.type === "booking" && it.tutorId === selectedTutor.value.id)
+  return (cart.items || []).some(
+    (it) => it.type === "booking" && it.tutorId === selectedTutor.value.id
+  )
 })
 
-// ist genau diese Buchung im Cart?
 const isThisBookingInCart = computed(() => {
   if (!selectedTutor.value) return false
   if (!computedStartAt.value) return false
@@ -83,7 +71,11 @@ const isThisBookingInCart = computed(() => {
 
   return (cart.items || []).some((it) => {
     if (it.key && it.key === key) return true
-    return it.type === "booking" && it.tutorId === selectedTutor.value.id && it.startAt === computedStartAt.value
+    return (
+      it.type === "booking" &&
+      it.tutorId === selectedTutor.value.id &&
+      it.startAt === computedStartAt.value
+    )
   })
 })
 
@@ -91,13 +83,11 @@ function toMinutes(hhmm) {
   const [h, m] = (hhmm || "").split(":").map(Number)
   return h * 60 + m
 }
-
 function overlap(aStart, aDur, bStart, bDur) {
   const aEnd = aStart + aDur
   const bEnd = bStart + bDur
   return aStart < bEnd && bStart < aEnd
 }
-
 function hasOverlappingBookingInCart(tutorId, dateYYYYMMDD, startHHmm, durationMinutes) {
   const newStart = toMinutes(startHHmm)
   const newDur = Number(durationMinutes)
@@ -116,7 +106,6 @@ function hasOverlappingBookingInCart(tutorId, dateYYYYMMDD, startHHmm, durationM
   })
 }
 
-// Times filtern (keine Überschneidung im Cart)
 const filteredAvailableTimes = computed(() => {
   if (!selectedTutor.value) return availableTimes.value
   if (!selectedDate.value) return availableTimes.value
@@ -135,137 +124,31 @@ const filteredAvailableTimes = computed(() => {
 
   return availableTimes.value.filter((t) => {
     const candStart = toMinutes(t)
-
     const clashes = cartBookingsSameTutorSameDate.some((it) => {
       const [, itTime] = String(it.startAt || "").split("T")
       const itStart = toMinutes(itTime)
       const itDur = Number(it.durationMinutes ?? 0)
       return overlap(candStart, dur, itStart, itDur)
     })
-
     return !clashes
   })
 })
 
-// ============================
-// Chat Modal
-// ============================
-const showChatModal = ref(false)
-const chatTutor = ref(null)
-const chatMessages = ref([])
-const chatInput = ref("")
-const chatError = ref(null)
-let pollTimer = null
-
-function openChatModal(tutor) {
-  chatTutor.value = tutor
-  showChatModal.value = true
-  chatMessages.value = []
-  chatInput.value = ""
-  chatError.value = null
-  loadChat()
-  startPolling()
-}
-
-
-function openContactModal(tutor) {
-  if (!tutor?.id) return
-  router.push({ path: "/messages", query: { tutorId: tutor.id } })
-}
-function closeChatModal() {
-  showChatModal.value = false
-  chatTutor.value = null
-  chatMessages.value = []
-  chatInput.value = ""
-  chatError.value = null
-  stopPolling()
-}
-
-function stopPolling() {
-  if (pollTimer) clearInterval(pollTimer)
-  pollTimer = null
-}
-
-function startPolling() {
-  stopPolling()
-  pollTimer = setInterval(loadChat, 2500)
-}
-
-async function loadChat() {
-  if (!chatTutor.value) return
-  try {
-    const token = await getAccessTokenSilently()
-    const res = await fetch(`${API_BASE}/api/chat/${chatTutor.value.id}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-    if (!res.ok) throw new Error(`Chat load failed: ${res.status}`)
-    chatMessages.value = await res.json()
-  } catch (e) {
-    chatError.value = e?.message ?? String(e)
-  }
-}
-
-async function sendChatMessage() {
-  if (!chatTutor.value) return
-  const msg = String(chatInput.value || "").trim()
-  if (!msg) return
-
-  try {
-    const token = await getAccessTokenSilently()
-    const res = await fetch(`${API_BASE}/api/chat/${chatTutor.value.id}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ message: msg }),
-    })
-
-    if (!res.ok) {
-      const txt = await res.text().catch(() => "")
-      throw new Error(`Send failed: ${res.status} ${txt}`)
-    }
-
-    chatInput.value = ""
-    await loadChat()
-  } catch (e) {
-    chatError.value = e?.message ?? String(e)
-  }
-}
-
-function formatChatTime(dt) {
-  const s0 = String(dt || "").trim()
-  if (!s0) return ""
-  const normalized = s0.replace(" ", "T").replace(/(\.\d+)?$/, "")
-  const [datePart, timePartFull] = normalized.split("T")
-  if (!datePart || !timePartFull) return s0
-  const [y, m, d] = datePart.split("-")
-  return `${d}.${m}.${y} ${timePartFull.slice(0, 5)}`
-}
-
-onBeforeUnmount(() => stopPolling())
-
-// ============================
-// Daten laden
-// ============================
 onMounted(async () => {
   await Promise.all([fetchTutors(), fetchCategories()])
   if (isAuthenticated.value) await loadBackendProfile()
 })
 
-// Backend Profile (Role) laden
 async function loadBackendProfile() {
   try {
     const token = await getAccessTokenSilently()
     const res = await fetch(`${API_BASE}/api/profile`, {
       headers: { Authorization: `Bearer ${token}` },
     })
-
     if (!res.ok) {
       const txt = await res.text().catch(() => "")
       throw new Error(`Profile load failed: ${res.status} ${txt}`)
     }
-
     const profile = await res.json()
     backendProfile.value = profile
     isAdmin.value = profile?.role === "ADMIN"
@@ -276,7 +159,6 @@ async function loadBackendProfile() {
   }
 }
 
-// Admin: Tutor erstellen
 async function createTutor() {
   try {
     if (!isAdmin.value) {
@@ -285,7 +167,6 @@ async function createTutor() {
     }
 
     const token = await getAccessTokenSilently()
-
     const response = await fetch(`${API_BASE}/api/tutors`, {
       method: "POST",
       headers: {
@@ -309,7 +190,6 @@ async function createTutor() {
   }
 }
 
-// Tutor:innen laden
 async function fetchTutors() {
   loading.value = true
   error.value = null
@@ -325,7 +205,6 @@ async function fetchTutors() {
   }
 }
 
-// Kategorien laden
 async function fetchCategories() {
   try {
     const res = await fetch(`${API_BASE}/api/category`)
@@ -336,10 +215,8 @@ async function fetchCategories() {
   }
 }
 
-// Filtered Tutors
 const filteredTutors = computed(() => {
   if (!searchName.value && !selectedCategory.value) return tutors.value
-
   return tutors.value.filter((tutor) => {
     const nameMatches =
       !searchName.value || (tutor.name || "").toLowerCase().includes(searchName.value.toLowerCase())
@@ -348,7 +225,6 @@ const filteredTutors = computed(() => {
   })
 })
 
-// Child Filter Event
 function handleTutorUpdate({ name, subject }) {
   searchName.value = name
   selectedCategory.value = subject
@@ -358,21 +234,23 @@ function handleTutorDeleted(id) {
   tutors.value = tutors.value.filter((t) => t.id !== id)
 }
 
-// =============================
-// Booking: Modal öffnen/schließen
-// =============================
+// ✅ HIER: Kontaktieren -> Nachrichten-Seite (Option 1)
+function openContact(tutor) {
+  if (!tutor?.id) return
+  router.push({ path: "/messages", query: { tutorId: tutor.id } })
+}
+
+// Booking modal
 async function openBookingModal(tutor) {
   selectedTutor.value = tutor
   bookingError.value = null
   bookingOk.value = false
 
-  // reset
   availableDates.value = []
   selectedDate.value = ""
   availableTimes.value = []
   selectedTime.value = ""
 
-  // defaults
   bookingForm.value.durationMinutes = 60
   bookingForm.value.note = ""
 
@@ -383,6 +261,11 @@ async function openBookingModal(tutor) {
 function closeBookingModal() {
   showBookingModal.value = false
   selectedTutor.value = null
+}
+
+function openMessagesForTutor(tutor) {
+  if (!tutor?.id) return
+  router.push({ path: "/messages", query: { tutorId: tutor.id } })
 }
 
 async function reloadDates() {
@@ -405,7 +288,6 @@ async function reloadDates() {
   }
 }
 
-// Preis berechnen: hourlyRate * duration
 function calcBookingPrice() {
   const rate = Number(selectedTutor.value?.hourlyRate ?? 0)
   const minutes = Number(bookingForm.value.durationMinutes ?? 0)
@@ -413,7 +295,6 @@ function calcBookingPrice() {
   return (rate * (minutes / 60)).toFixed(2)
 }
 
-// Available Times laden (Backend)
 async function fetchAvailableTimes() {
   if (!selectedTutor.value || !selectedDate.value) return
 
@@ -439,7 +320,6 @@ async function fetchAvailableTimes() {
   }
 }
 
-// In Warenkorb legen
 function addBookingToCart() {
   bookingError.value = null
 
@@ -477,7 +357,6 @@ function addBookingToCart() {
   }
 }
 
-// Wenn Cart sich ändert und Modal offen ist → Zeiten neu laden
 watch(
   () => cart.items,
   async () => {
@@ -485,7 +364,6 @@ watch(
     if (!selectedTutor.value || !selectedDate.value) return
 
     await fetchAvailableTimes()
-
     if (selectedTime.value && !filteredAvailableTimes.value.includes(selectedTime.value)) {
       selectedTime.value = ""
     }
@@ -525,7 +403,7 @@ watch(
             :is-admin="isAdmin"
             @deleted="handleTutorDeleted"
             @book="openBookingModal"
-            @contact="openChatModal"
+            @contact="openContact"
           />
         </div>
 
@@ -540,7 +418,7 @@ watch(
     </div>
   </div>
 
-  <!-- ✅ Admin: Create Tutor Modal -->
+  <!-- Admin Modal -->
   <div v-if="showCreateForm && !isLoading && isAuthenticated && isAdmin" class="modal-backdrop">
     <div class="modal-content">
       <h3>Neuen Tutor erstellen</h3>
@@ -557,7 +435,7 @@ watch(
     </div>
   </div>
 
-  <!-- ✅ Booking Modal -->
+  <!-- Booking Modal -->
   <div v-if="showBookingModal" class="modal-backdrop">
     <div class="modal-content">
       <h3>Stunde buchen</h3>
@@ -622,43 +500,6 @@ watch(
       <p v-if="bookingError" class="text-danger mt-2">{{ bookingError }}</p>
     </div>
   </div>
-
-  <!-- ✅ Chat Modal -->
-  <div v-if="showChatModal" class="modal-backdrop">
-    <div class="modal-content">
-      <h3>Chat mit {{ chatTutor?.name }}</h3>
-      <p class="text-muted" style="margin-top: -6px;">
-        {{ chatTutor?.subject }}
-      </p>
-
-      <div class="chat-box">
-        <div v-if="!chatMessages.length" class="text-muted small">Noch keine Nachrichten.</div>
-
-        <div v-for="m in chatMessages" :key="m.id" class="chat-msg" :class="{ mine: m.senderRole === 'STUDENT' }">
-          <div class="chat-bubble">
-            <div class="chat-text">{{ m.message }}</div>
-            <div class="chat-time">{{ formatChatTime(m.createdAt) }}</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="d-flex gap-2 mt-2">
-        <input
-          v-model="chatInput"
-          class="form-control"
-          placeholder="Nachricht schreiben..."
-          @keyup.enter="sendChatMessage"
-        />
-        <button class="btn btn-success" @click="sendChatMessage">Senden</button>
-      </div>
-
-      <p v-if="chatError" class="text-danger mt-2">{{ chatError }}</p>
-
-      <div class="d-flex gap-2 mt-3">
-        <button class="btn btn-secondary" @click="closeChatModal">Schließen</button>
-      </div>
-    </div>
-  </div>
 </template>
 
 <style scoped>
@@ -678,7 +519,7 @@ watch(
   border-radius: 12px;
   width: 400px;
   max-width: 92vw;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
 }
 
 .tutor-page {
@@ -721,60 +562,13 @@ watch(
 }
 
 @media (max-width: 576px) {
-  .tutor-page {
-    padding-top: 2rem;
-  }
+  .tutor-page { padding-top: 2rem; }
   .filter-top-right {
     position: static;
     margin-bottom: 1rem;
     display: flex;
     justify-content: flex-start;
   }
-  .tutor-title {
-    margin-top: 0;
-  }
-}
-
-/* Chat UI */
-.chat-box {
-  border: 1px solid #eee;
-  border-radius: 10px;
-  padding: 10px;
-  height: 280px;
-  overflow-y: auto;
-  background: #fafafa;
-}
-
-.chat-msg {
-  display: flex;
-  margin-bottom: 10px;
-}
-
-.chat-msg.mine {
-  justify-content: flex-end;
-}
-
-.chat-bubble {
-  max-width: 80%;
-  border-radius: 12px;
-  padding: 10px;
-  background: white;
-  border: 1px solid #eee;
-}
-
-.chat-msg.mine .chat-bubble {
-  background: #e9f5e6;
-  border-color: #d5ead0;
-}
-
-.chat-text {
-  white-space: pre-wrap;
-}
-
-.chat-time {
-  font-size: 12px;
-  color: #777;
-  margin-top: 6px;
-  text-align: right;
+  .tutor-title { margin-top: 0; }
 }
 </style>

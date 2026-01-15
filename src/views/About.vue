@@ -15,7 +15,7 @@
     </p>
 
     <p>
-      Egal ob Prüfungsvorbereitung 📚, Verständnisfragen 🤔 oder der letzte Motivationsschub 💪 –
+      Egal ob Prüfaungsvorbereitung 📚, Verständnisfragen 🤔 oder der letzte Motivationsschub 💪 –
       bei CheckMate findest du Menschen, die dich genau dort abholen, wo du gerade stehst.
       Persönlich, flexibel und auf Augenhöhe.
     </p>

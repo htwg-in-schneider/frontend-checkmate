@@ -1,6 +1,5 @@
 <script setup>
 import TutorReviews from "@/components/TutorReviews.vue"
-import { useCartStore } from "@/stores/cart"
 import { useAuth0 } from "@auth0/auth0-vue"
 
 const props = defineProps({
@@ -11,54 +10,33 @@ const props = defineProps({
 const emit = defineEmits(["book", "deleted", "contact"])
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8081"
-
 const { getAccessTokenSilently, isAuthenticated, isLoading } = useAuth0()
-const cart = useCartStore()
 
 function onBookClick() {
   emit("book", props.tutor)
 }
 
-// optional (nur wenn du das wirklich nutzt)
-function addLessonToCart() {
-  if (!props.tutor) return
-
-  cart.add({
-    id: props.tutor.id,
-    title: `${props.tutor.subject} bei ${props.tutor.name}`,
-    tutorId: props.tutor.id,
-    tutorName: props.tutor.name,
-    subject: props.tutor.subject,
-    image: props.tutor.image,
-    price: 0,
-  })
+function contactTutor() {
+  emit("contact", props.tutor)
 }
 
 async function deleteTutor() {
   if (!props.tutor?.id) return
-
   try {
     const token = await getAccessTokenSilently()
-
-    const response = await fetch(`${API_BASE}/api/tutors/${props.tutor.id}`, {
+    const res = await fetch(`${API_BASE}/api/tutors/${props.tutor.id}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
     })
-
-    if (!response.ok) {
-      const txt = await response.text().catch(() => "")
-      throw new Error(`Delete failed (${response.status}): ${txt}`)
+    if (!res.ok) {
+      const txt = await res.text().catch(() => "")
+      throw new Error(`Delete failed (${res.status}): ${txt}`)
     }
-
     emit("deleted", props.tutor.id)
   } catch (e) {
     console.error(e)
     alert("Tutor konnte nicht gelöscht werden.")
   }
-}
-
-function contactTutor() {
-  emit("contact", props.tutor)
 }
 </script>
 
@@ -115,10 +93,9 @@ function contactTutor() {
   border-radius: 12px;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
-
 .card:hover {
   transform: translateY(-3px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.08);
 }
 
 .contact-btn {
@@ -130,7 +107,6 @@ function contactTutor() {
   border-radius: 8px;
   transition: 0.2s ease;
 }
-
 .contact-btn:hover {
   background-color: #4f6746;
   border-color: #4f6746;
@@ -148,7 +124,6 @@ function contactTutor() {
   border-top-left-radius: 12px;
   border-top-right-radius: 12px;
 }
-
 .profile-img {
   width: 100%;
   height: 100%;

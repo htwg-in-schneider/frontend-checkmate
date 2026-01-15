@@ -11,7 +11,7 @@ import FAQ from "@/views/FAQ.vue"
 import Datenschutz from "@/views/Datenschutz.vue"
 import AdminTransactions from "@/views/AdminTransactions.vue"
 import Unterricht from "@/views/Unterricht.vue"
-import Message from "@/views/Message.vue"
+import Messages from "@/views/Messages.vue"
 
 
 const routes = [
@@ -140,9 +140,9 @@ const routes = [
   },
 
   {
-    path: "/message",
-    name: "message",
-    component: Message
+    path: "/messages",
+    name: "messages",
+    component: Messages
   }
 
 ]
