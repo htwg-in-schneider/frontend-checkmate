@@ -212,7 +212,6 @@ async function dislikeStudent(s) {
     </button>
   </div>
 
-  <Footer />
 </template>
 
 <style scoped>

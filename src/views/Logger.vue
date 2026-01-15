@@ -88,7 +88,6 @@ async function login() {
 
   
 
-   <Footer />
 </template>
 
 <style scoped>

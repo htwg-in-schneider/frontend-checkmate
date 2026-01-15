@@ -128,7 +128,6 @@ onMounted(loadData)
       </form>
     </div>
   </main>
-  <Footer />
 </template>
 
 <style scoped>

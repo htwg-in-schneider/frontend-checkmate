@@ -125,7 +125,6 @@ function goBack() {
     </div>
   </main>
 
-  <Footer />
 </template>
 
 <style scoped>

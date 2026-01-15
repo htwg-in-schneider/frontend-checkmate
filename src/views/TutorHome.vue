@@ -36,7 +36,6 @@ function goLessons() {
     </div>
   </main>
 
-  <Footer />
 </template>
 
 <style scoped>

@@ -108,7 +108,6 @@ const toggleReviews = () => {
     />
   </section>
 
-  <Footer />
 </template>
 
 <style scoped>
