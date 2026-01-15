@@ -1,21 +1,26 @@
 import { fileURLToPath, URL } from 'node:url'
-
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
-import vueDevTools from 'vite-plugin-vue-devtools'
 
-const repoName = '/frontend-checkmate/';
 
-// https://vite.dev/config/
 export default defineConfig({
-  base: process.env.NODE_ENV === 'production' ? repoName : '/',
+
+  base: '/frontend-checkmate/',   
+  
+
   plugins: [
     vue(),
-    vueDevTools(),
+
   ],
+  
   resolve: {
     alias: {
+   
       '@': fileURLToPath(new URL('./src', import.meta.url))
     },
   },
+
+  build: {
+    outDir: 'dist',
+  }
 })

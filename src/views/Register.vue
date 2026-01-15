@@ -113,7 +113,6 @@ async function register() {
 
   </div>
 
-  <Footer />
 </template>
 
 <style scoped>

@@ -11,7 +11,7 @@ const router = useRouter()
 const cart = useCartStore()
 const cartCount = computed(() => cart.count)
 
-const { loginWithRedirect, logout, isAuthenticated, isLoading, getAccessTokenSilently } = useAuth0()
+const { loginWithRedirect, logout, isAuthenticated, isLoading, getAccessTokenSilently, user } = useAuth0()
 
 const onLoginClick = () => {
   loginWithRedirect({
@@ -20,18 +20,23 @@ const onLoginClick = () => {
 }
 
 const onLogoutClick = () => {
-  logout({ logoutParams: { returnTo: window.location.origin } })
+  logout({ logoutParams: { returnTo: window.location.origin + "/frontend-checkmate/" } })
 }
 
-const toggleLanguage = () => {
-  const select = document.querySelector('.goog-te-combo')
-  if (select) {
-    const newValue = select.value === 'en' ? 'de' : 'en'
-    select.value = newValue
-    select.dispatchEvent(new Event('change'))
+function goHome() {
+  // Beispiel für ei
+  closeBurger(); // WICHTIG: Schließt das Menü nach dem Klick
+  // nen Auth0-Rollen-Claim
+  const roles = user.value['https://checkmate.app/roles'] || [];
+  
+  if (roles.includes('student')) {
+    router.push('/student');
+  } else if (roles.includes('tutor')) {
+    router.push('/tutor');
   } else {
-    alert('Google Translate konnte noch nicht geladen werden. Bitte kurz warten.')
+    router.push('/');
   }
+
 }
 
 function goCheckout() {
@@ -113,19 +118,31 @@ onBeforeUnmount(() => document.removeEventListener("click", onDocumentClick))
     </router-link>
 
     <div class="right-Side">
-      <!-- Sprache -->
-      <button id="lang" @click="toggleLanguage">
-        <i class="fa-solid fa-globe"></i> Sprache
+   
+      <!-- Profil -->
+       
+   <div v-if="isAuthenticated" class="user-dropdown">
+    <button 
+      id="profile-btn" 
+      @click="goProfile"
+      class="avatar-wrapper"
+    >
+      <div class="avatar" :style="{ color: 'gray' }" >
+        {{ (user?.name || user?.nickname || '?').slice(0, 1).toUpperCase() }}
+      </div>
+    </button>
+
+    <div class="dropdown-content">
+      <button @click="goProfile">
+        <i class="bi bi-person"></i> Profil bearbeiten
       </button>
 
-      <!-- Profil -->
-      <button
-        id="profile-btn"
-        v-if="isAuthenticated"
-        @click="goProfile"
-      >
-        <i class="bi bi-person"></i>
+      <button @click="onLogoutClick" class="logout-item">
+        <i class="bi bi-box-arrow-right"></i> Abmelden
       </button>
+    </div>
+  </div>
+      
 
       <!-- Warenkorb -->
       <button
@@ -133,7 +150,7 @@ onBeforeUnmount(() => document.removeEventListener("click", onDocumentClick))
         class="nav-btn position-relative"
         @click="router.push('/checkout')"
       >
-        🛒
+        <i class="bi bi-cart"></i>
         <span v-if="cartCount > 0" class="cart-badge">{{ cartCount }}</span>
       </button>
 
@@ -144,33 +161,27 @@ onBeforeUnmount(() => document.removeEventListener("click", onDocumentClick))
         </button>
 
         <teleport to="body">
-          <div v-if="burgerOpen" class="burger-overlay" @click="closeBurger"></div>
-
           <div v-if="burgerOpen" class="burger-menu" @click.stop>
-            <button class="menu-item" @click="go('/study-partner')">Studypartner suchen</button>
-            <button class="menu-item" @click="go('/tutoren')">Tutor suchen</button>
-            <button class="menu-item" @click="go('/unterricht')">Unterrichtsstunden</button>
-            <button class="menu-item" @click="go('/matches')">Meine Matches</button>
-            <button class="menu-item" @click="go('/messages')">Nachrichten</button>
-
-
-            <!-- ✅ Admin sieht zusätzlich "Alle Transaktionen" -->
-            <button
-              v-if="isAdmin"
-              class="menu-item admin"
-              @click="go('/adminTransactions')"
-            >
-              Alle Transaktionen
+            <button class="menu-item" @click="goHome">
+                 Home
             </button>
+  
+            <hr class="menu-sep" /> <button class="menu-item" @click="go('/study-partner')">Studypartner suchen</button>
+           <button class="menu-item" @click="go('/tutoren')">Tutor suchen</button>
+           <button class="menu-item" @click="go('/unterricht')">Unterrichtsstunden</button>
+           <button class="menu-item" @click="go('/matches')">Meine Matches</button>
+           <button class="menu-item" @click="go('/message')">Nachrichten</button>
 
-            <hr class="menu-sep" />
+           <button v-if="isAdmin" class="menu-item admin" @click="go('/adminTransactions')">
+             Alle Transaktionen
+           </button>
+  
+          <hr class="menu-sep" />
 
-            <button class="menu-item logout-item" @click="logoutFromBurger">Abmelden</button>
-          </div>
+         </div>
         </teleport>
       </div>
 
-      <!-- Einloggen (nur wenn NICHT eingeloggt) -->
       <button
         id="sign"
         v-if="!isLoading && !isAuthenticated"
@@ -179,23 +190,106 @@ onBeforeUnmount(() => document.removeEventListener("click", onDocumentClick))
         Einloggen
       </button>
 
-      <!-- ❌ Abmelden-Button absichtlich NICHT mehr hier -->
     </div>
   </div>
 </template>
 
 <style scoped>
 .header {
-  background: rgba(255, 255, 255, 0.35);
+ 
   background-color: #697C44;
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
   padding: 0.7rem 1.5rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  position: sticky;
+  overflow: visible !important;
   top: 0;
-  z-index: 1000;
+  z-index: 1200;
+}
+/* Dein Profil-Button Style */
+#profile-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+/* Die Avatar-Kreis-Logik */
+.avatar {
+  background-color: lightgray; /* Deine Farbe aus dem Tutor-Filter-Toggle */
+  border: 1px solid gray;
+  border-radius: 50%; /* Perfekt rund */
+  width: 50px;        /* Feste Breite */
+  height: 50px;       /* Feste Höhe */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 1.5rem;
+  transition: transform 0.2s;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  
+}
+
+/* Dropdown Logik */
+.user-dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown-content {
+  display: flex; 
+  flex-direction: column;
+  opacity: 0;
+  visibility: hidden;
+    position: absolute;
+  right: 0;
+  top: 100%; 
+  background-color: white;
+  min-width: 180px;
+  box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
+  z-index: 1300;
+  border-radius: 8px;
+  margin-top: 5px;
+  overflow: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+  transition-delay: 0.1s; 
+}
+
+/* 2. Den Hover-Zustand anpassen */
+.user-dropdown:hover .dropdown-content {
+  opacity: 1;
+  visibility: visible;
+  
+  /* VERZÖGERUNG BEIM ÖFFNEN (Enter) */
+  /* Beim Drüberfahren soll es sofort (0s) erscheinen */
+  transition-delay: 0s;
+}
+
+.dropdown-content button {
+  width: 100%;
+  padding: 12px 16px;
+  border: none;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  color: #333;
+  font-size: 14px;
+  font-weight: bolder;
+}
+
+.dropdown-content button:hover {
+  background-color: #f1f1f1;
+}
+
+.user-dropdown:hover .dropdown-content {
+  display: flex;
+}
+
+.logout-item {
+  border-top: 1px solid #eee !important;
+  color: #a46c3a !important; /* Braunton für Logout */
 }
 
 .logo {
@@ -223,19 +317,10 @@ onBeforeUnmount(() => document.removeEventListener("click", onDocumentClick))
   align-items: center;
   gap: 6px;
   position: relative;
+  font-weight:bolder;
 }
 
 /* Profil Button bleibt wie bei dir */
-#profile-btn {
-  background-color: grey;
-  color: white;
-  border: 1px solid white;
-  border-radius: 90px;
-  padding: 0.5rem 1rem;
-  cursor: pointer;
-  font-weight: 600;
-  transition: background 0.3s;
-}
 
 .right-Side {
   display: flex;

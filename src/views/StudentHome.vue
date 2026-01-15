@@ -45,7 +45,6 @@ function goMatches() {
     </div>
   </main>
 
-  <Footer />
 </template>
 
 <style scoped>
