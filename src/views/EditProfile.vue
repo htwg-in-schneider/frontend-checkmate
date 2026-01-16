@@ -1,8 +1,6 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useAuth0 } from '@auth0/auth0-vue'
-import Navbar from '@/components/Navbar.vue'
-import Footer from '@/components/Footer.vue'
 
 const { getAccessTokenSilently } = useAuth0()
 const API_BASE = import.meta.env.VITE_API_BASE_URL
@@ -45,19 +43,19 @@ async function saveProfile() {
       Authorization: `Bearer ${token}` 
     }
 
-    // A) User-Update (Name/Email) -> PATCH
-    await fetch(`${API_BASE}/api/users/me`, {
-      method: 'PATCH',
-      headers,
-      body: JSON.stringify(userForm.value)
-    })
+    // A) User-Update (Stammdaten: Name/Email) -> PATCH an /api/users/me
+await fetch(`${API_BASE}/api/users/me`, {
+  method: 'PATCH',
+  headers,
+  body: JSON.stringify(userForm.value)
+})
 
-    // B) Student-Update (Profilfelder) -> PUT
-    const sRes = await fetch(`${API_BASE}/api/students/me`, {
-      method: 'PUT',
-      headers,
-      body: JSON.stringify(studentForm.value)
-    })
+// B) Student-Update (Profilfelder: aboutMe, university, etc.) -> PUT an /api/students/me
+const sRes = await fetch(`${API_BASE}/api/students/me`, { // <--- Hier muss /students/ stehen!
+  method: 'PUT',
+  headers,
+  body: JSON.stringify(studentForm.value)
+})
 
     if (sRes.ok) {
       message.value = "Profil erfolgreich gespeichert! ✅"
