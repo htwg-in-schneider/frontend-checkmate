@@ -9,7 +9,7 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL
 
 // Daten-Modelle
 const userForm = ref({ name: '', email: '' })
-const studentForm = ref({ aboutMe: '', fieldOfStudy: '', subject: '', semester: 1, university: '', imageUrl: '' })
+const studentForm = ref({ aboutMe: '', fieldOfStudy: '', subjects: [], semester: 1, university: '', imageUrl: '' })
 
 const loading = ref(true)
 const saving = ref(false)
@@ -69,6 +69,16 @@ async function saveProfile() {
   }
 }
 
+// Neues leeres Fach hinzufügen
+function addSubject() {
+  studentForm.value.subjects.push('')
+}
+
+// Fach an einem bestimmten Index entfernen
+function removeSubject(index) {
+  studentForm.value.subjects.splice(index, 1)
+}
+
 onMounted(loadData)
 </script>
 
@@ -93,7 +103,25 @@ onMounted(loadData)
         </div>
 
         <hr />
-
+        <div class="section">
+          <h3>Meine Fächer</h3>
+          <div class="subjects-container">
+            <div v-for="(sub, index) in studentForm.subjects" :key="index" class="subject-input-wrapper">
+              <input 
+                v-model="studentForm.subjects[index]" 
+                type="text" 
+                class="form-control subject-input" 
+                placeholder="z.B. Mathe 1"
+              />
+              <button type="button" class="inner-remove-btn" @click="removeSubject(index)">✕</button>
+            </div>
+          </div>
+          
+          <button type="button" class="add-subject-btn" @click="addSubject">
+            + Fach hinzufügen
+          </button>
+        </div>
+        <hr />
         <div class="section">
           <h3>Studium & Profil</h3>
           <div class="form-group">
@@ -161,10 +189,63 @@ onMounted(loadData)
 }
 .form-control {
   width: 100%;
-  padding: 0.6rem;
-  border: 1px solid #ccc;
-  border-radius: 8px;
+  padding: 0.5rem;
+  border: 1px solid  #697C44;;
+  border-radius: 10px;
 }
+
+
+/* --- NEUES STYLING FÜR DIE FÄCHER --- */
+.subject-input-wrapper {
+  position: relative; /* Wichtig für die Positionierung des X */
+  margin-bottom: 0.8rem;
+  display: flex;
+  align-items: center;
+}
+
+.subject-input {
+  padding-right: 2.5rem; /* Platz lassen für das X rechts */
+}
+
+.inner-remove-btn {
+  position: absolute;
+  right: 10px;
+  background: none;
+  border: none;
+  color: #d9534f; /* Ein schönes Rot */
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  transition: transform 0.2s;
+}
+
+.inner-remove-btn:hover {
+  transform: scale(1.3);
+  color: #dc2e2b;
+  font-weight: bolder;
+}
+
+.add-subject-btn {
+  background-color: transparent;
+  color: #697C44;
+  border: 2px solid #697C44;
+  width: 100%;
+  border-radius: 50px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 0.5rem;
+  height: 40px;
+}
+
+.add-subject-btn:hover {
+  background-color: #a1b57b;
+  border-style: solid;
+  color: white;
+}
+/* ------------------------------------ */
+
 .save-btn {
   background-color: #697C44;
   color: white;

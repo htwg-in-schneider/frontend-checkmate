@@ -33,10 +33,19 @@ async function fetchStudents() {
   loading.value = true;
   error.value = null;
   try {
-    const response = await fetch(url);
+    // 1. Token holen (wie in EditProfile.vue)
+    const token = await getAccessTokenSilently();
+    
+    // 2. Header definieren
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+    // 3. Den Request mit den Headern ausführen
+    const response = await fetch(url, { headers });
+    
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
+    
     const data = await response.json();
     students.value = data;
     filteredStudents.value = data;
@@ -50,10 +59,11 @@ async function fetchStudents() {
 }
 
 // verfügbare Themen/Fächer aus den Studenten bauen
-const availableSubjects = computed(() =>
-  Array.from(new Set(students.value.map((s) => s.subject).filter(Boolean)))
-);
-
+const availableSubjects = computed(() => {
+  // Wir nehmen alle subjects-Listen aller Studenten und machen eine flache Liste daraus
+  const all = students.value.flatMap(s => s.subjects || []);
+  return Array.from(new Set(all)).filter(Boolean);
+});
 // wird vom Filter-Component aufgerufen (TutorFilter feuert @tutorUpdate)
 function handleStudentUpdate(filter) {
   if (!filter || (!filter.name && !filter.subject)) {
@@ -64,7 +74,8 @@ function handleStudentUpdate(filter) {
 
     filteredStudents.value = students.value.filter((s) => {
       const matchesName = !name || ((s.user?.name || '').toLowerCase().includes(name));
-      const matchesSubject = !subject || s.subject === subject;
+      // Prüfen, ob das gesuchte Fach in der Liste des Studenten enthalten ist:
+      const matchesSubject = !subject || (s.subjects && s.subjects.includes(subject));
       return matchesName && matchesSubject;
     });
   }
@@ -169,8 +180,8 @@ async function dislikeStudent(s) {
       </div>
 
       <div class="mt-3">
-        <div class="fw-bold">Fach:</div>
-        <div class="text-muted small">{{ currentStudent.subject ?? '—' }}</div>
+        <div class="fw-bold">Fächer:</div>
+        <div class="text-muted small">{{ currentStudent.subjects && currentStudent.subjects.length > 0 ? currentStudent.subjects.join(', ') : '—' }}</div>
       </div>
 
       <div class="mt-3">
