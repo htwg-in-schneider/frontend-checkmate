@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useAuth0 } from '@auth0/auth0-vue'
 
 const { getAccessTokenSilently } = useAuth0()
@@ -13,19 +13,45 @@ const loading = ref(true)
 const saving = ref(false)
 const message = ref('')
 
+// ✅ alle Students laden, um daraus unique Subjects zu bauen
+const allStudents = ref([])
+
+const availableSubjects = computed(() => {
+  const all = allStudents.value.flatMap(s => s?.subjects || [])
+  return Array.from(new Set(all))
+    .map(s => (s || '').trim())
+    .filter(Boolean)
+    .sort()
+})
+
+async function loadAvailableSubjects(headers) {
+  // falls dein Backend das erlaubt:
+  const res = await fetch(`${API_BASE}/api/students`, { headers })
+  if (res.ok) {
+    allStudents.value = await res.json()
+  } else {
+    console.warn('Konnte Subjects nicht laden, Status:', res.status)
+    allStudents.value = []
+  }
+}
+
 async function loadData() {
   loading.value = true
   try {
     const token = await getAccessTokenSilently()
     const headers = { Authorization: `Bearer ${token}` }
 
-    // 1. Basis-User Daten holen (Name, Email)
     const userRes = await fetch(`${API_BASE}/api/users/me`, { headers })
     if (userRes.ok) userForm.value = await userRes.json()
 
-    // 2. Studenten-Profil Daten holen
     const studentRes = await fetch(`${API_BASE}/api/students/me`, { headers })
-    if (studentRes.ok) studentForm.value = await studentRes.json()
+    if (studentRes.ok) {
+      studentForm.value = await studentRes.json()
+      // ✅ absichern
+      if (!Array.isArray(studentForm.value.subjects)) studentForm.value.subjects = []
+    }
+
+    await loadAvailableSubjects(headers)
   } catch (e) {
     console.error("Fehler beim Laden:", e)
   } finally {
@@ -33,33 +59,31 @@ async function loadData() {
   }
 }
 
+
 async function saveProfile() {
   saving.value = true
   message.value = ''
   try {
     const token = await getAccessTokenSilently()
-    const headers = { 
+    const headers = {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}` 
+      Authorization: `Bearer ${token}`
     }
 
-    // A) User-Update (Stammdaten: Name/Email) -> PATCH an /api/users/me
-await fetch(`${API_BASE}/api/users/me`, {
-  method: 'PATCH',
-  headers,
-  body: JSON.stringify(userForm.value)
-})
+    await fetch(`${API_BASE}/api/users/me`, {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify(userForm.value)
+    })
 
-// B) Student-Update (Profilfelder: aboutMe, university, etc.) -> PUT an /api/students/me
-const sRes = await fetch(`${API_BASE}/api/students/me`, { // <--- Hier muss /students/ stehen!
-  method: 'PUT',
-  headers,
-  body: JSON.stringify(studentForm.value)
-})
+    const sRes = await fetch(`${API_BASE}/api/students/me`, {
+      method: 'PUT',
+      headers,
+      body: JSON.stringify(studentForm.value)
+    })
 
-    if (sRes.ok) {
-      message.value = "Profil erfolgreich gespeichert! ✅"
-    }
+    if (sRes.ok) message.value = "Profil erfolgreich gespeichert! ✅"
+    else message.value = "Fehler beim Speichern. ❌"
   } catch (e) {
     message.value = "Fehler beim Speichern. ❌"
   } finally {
@@ -67,12 +91,10 @@ const sRes = await fetch(`${API_BASE}/api/students/me`, { // <--- Hier muss /stu
   }
 }
 
-// Neues leeres Fach hinzufügen
 function addSubject() {
   studentForm.value.subjects.push('')
 }
 
-// Fach an einem bestimmten Index entfernen
 function removeSubject(index) {
   studentForm.value.subjects.splice(index, 1)
 }
@@ -102,15 +124,19 @@ onMounted(loadData)
 
         <hr />
         <div class="section">
+          <datalist id="subjects-list">
+  <option v-for="s in availableSubjects" :key="s" :value="s"></option>
+</datalist>
           <h3>Meine Fächer</h3>
           <div class="subjects-container">
             <div v-for="(sub, index) in studentForm.subjects" :key="index" class="subject-input-wrapper">
-              <input 
-                v-model="studentForm.subjects[index]" 
-                type="text" 
-                class="form-control subject-input" 
-                placeholder="z.B. Mathe 1"
-              />
+              <input
+  v-model="studentForm.subjects[index]"
+  list="subjects-list"
+  type="text"
+  class="form-control subject-input"
+  placeholder="z.B. Mathe 1"
+/>
               <button type="button" class="inner-remove-btn" @click="removeSubject(index)">✕</button>
             </div>
           </div>
