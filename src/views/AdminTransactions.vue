@@ -79,14 +79,13 @@ function formatDateTime(dt) {
   if (Array.isArray(dt)) {
     const [y, mo, d, h = 0, mi = 0, s = 0] = dt
     const pad = (n) => String(n).padStart(2, "0")
-    return `${y}-${pad(mo)}-${pad(d)}T${pad(h)}:${pad(mi)}:${pad(s)}`
+    return `${y}-${pad(mo)}-${pad(d)} ${pad(h)}:${pad(mi)}:${pad(s)}`
   }
 
   const s0 = String(dt).trim()
   if (!s0) return "—"
 
-  // "2026-01-15 14:00" -> "2026-01-15T14:00"
-  let normalized = s0.replace(" ", "T")
+  let normalized = s0.replace("T", " ")
 
   // Millisekunden abschneiden
   normalized = normalized.replace(/(\.\d+)?$/, "")
