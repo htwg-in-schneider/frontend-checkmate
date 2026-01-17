@@ -33,10 +33,19 @@ async function fetchStudents() {
   loading.value = true;
   error.value = null;
   try {
-    const response = await fetch(url);
+    // 1. Token holen (wie in EditProfile.vue)
+    const token = await getAccessTokenSilently();
+    
+    // 2. Header definieren
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+    // 3. Den Request mit den Headern ausführen
+    const response = await fetch(url, { headers });
+    
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
+    
     const data = await response.json();
     students.value = data;
     filteredStudents.value = data;
@@ -50,10 +59,11 @@ async function fetchStudents() {
 }
 
 // verfügbare Themen/Fächer aus den Studenten bauen
-const availableSubjects = computed(() =>
-  Array.from(new Set(students.value.map((s) => s.subject).filter(Boolean)))
-);
-
+const availableSubjects = computed(() => {
+  // Wir nehmen alle subjects-Listen aller Studenten und machen eine flache Liste daraus
+  const all = students.value.flatMap(s => s.subjects || []);
+  return Array.from(new Set(all)).filter(Boolean);
+});
 // wird vom Filter-Component aufgerufen (TutorFilter feuert @tutorUpdate)
 function handleStudentUpdate(filter) {
   if (!filter || (!filter.name && !filter.subject)) {
@@ -64,7 +74,8 @@ function handleStudentUpdate(filter) {
 
     filteredStudents.value = students.value.filter((s) => {
       const matchesName = !name || ((s.user?.name || '').toLowerCase().includes(name));
-      const matchesSubject = !subject || s.subject === subject;
+      // Prüfen, ob das gesuchte Fach in der Liste des Studenten enthalten ist:
+      const matchesSubject = !subject || (s.subjects && s.subjects.includes(subject));
       return matchesName && matchesSubject;
     });
   }
@@ -126,6 +137,7 @@ async function dislikeStudent(s) {
   <Navbar />
 
   <!-- Header -->
+  
   <section class="py-5 text-center">
     <div class="container">
       <h2 class="fw-bold">Study-Partner suchen</h2>
@@ -169,8 +181,8 @@ async function dislikeStudent(s) {
       </div>
 
       <div class="mt-3">
-        <div class="fw-bold">Fach:</div>
-        <div class="text-muted small">{{ currentStudent.subject ?? '—' }}</div>
+        <div class="fw-bold">Fächer:</div>
+        <div class="text-muted small">{{ currentStudent.subjects && currentStudent.subjects.length > 0 ? currentStudent.subjects.join(', ') : '—' }}</div>
       </div>
 
       <div class="mt-3">
@@ -183,12 +195,12 @@ async function dislikeStudent(s) {
         <div class="text-muted small">{{ currentStudent.university ?? '—' }}</div>
       </div>
 
-      <div class="mt-auto d-flex justify-content-between gap-3 pt-3">
-        <button class="btn btn-outline-danger w-50" @click="dislikeStudent(currentStudent)">
-          ❌
+       <div class="mt-auto d-flex justify-content-between gap-3 px-5 pt-3">
+        <button class="btn btn-danger btn-round" @click="dislikeStudent(currentStudent)">
+          <i class="bi bi-x"></i>
         </button>
-        <button class="btn btn-success w-50" @click="likeStudent(currentStudent)">
-          ✅
+        <button class="btn btn-success btn-round" @click="likeStudent(currentStudent)">
+          <i class="bi bi-check-lg"></i>
         </button>
       </div>
 
@@ -276,31 +288,27 @@ async function dislikeStudent(s) {
   transform: translateY(8px);
 }
 
-/* ❌ Swipe LEFT (Dislike) */
-.swipe-left-leave-active {
-  transition: transform 200ms ease, opacity 200ms ease;
+
+.btn-danger i {
+  font-size: 3.2rem; /* Hier kannst du die Größe beliebig anpassen */
 }
-.swipe-left-leave-to {
-  transform: translateX(-120%) rotate(-6deg);
-  opacity: 0;
+.btn-success i {
+  font-size: 2.5rem; 
+}
+.btn-round {
+  width: 70px;        /* Gleiche Breite */
+  height: 70px;       /* Gleiche Höhe */
+  border-radius: 50%; /* Macht den Button kreisrund */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;         /* Entfernt Standard-Padding, damit das Icon zentriert ist */
+  font-size: 1.5rem;  /* Macht das Icon etwas größer */
+  transition: transform 0.2s ease; /* Kleiner Effekt beim Drüberfahren */
 }
 
-/* ✅ Swipe RIGHT (Like) */
-.swipe-right-leave-active {
-  transition: transform 200ms ease, opacity 200ms ease;
-}
-.swipe-right-leave-to {
-  transform: translateX(120%) rotate(6deg);
-  opacity: 0;
-}
-.swipe-left-enter-active,
-.swipe-right-enter-active {
-  transition: opacity 180ms ease, transform 180ms ease;
-}
-.swipe-left-enter-from,
-.swipe-right-enter-from {
-  opacity: 0;
-  transform: translateY(8px);
+.btn-round:hover {
+  transform: scale(1.1); /* Button wird beim Hovern leicht größer */
 }
 
 

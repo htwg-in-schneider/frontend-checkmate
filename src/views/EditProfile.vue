@@ -1,19 +1,39 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useAuth0 } from '@auth0/auth0-vue'
-import Navbar from '@/components/Navbar.vue'
-import Footer from '@/components/Footer.vue'
 
 const { getAccessTokenSilently } = useAuth0()
 const API_BASE = import.meta.env.VITE_API_BASE_URL
 
 // Daten-Modelle
 const userForm = ref({ name: '', email: '' })
-const studentForm = ref({ aboutMe: '', fieldOfStudy: '', subject: '', semester: 1, university: '', imageUrl: '' })
+const studentForm = ref({ aboutMe: '', fieldOfStudy: '', subjects: [], semester: 1, university: '', imageUrl: '' })
 
 const loading = ref(true)
 const saving = ref(false)
 const message = ref('')
+
+// ✅ alle Students laden, um daraus unique Subjects zu bauen
+const allStudents = ref([])
+
+const availableSubjects = computed(() => {
+  const all = allStudents.value.flatMap(s => s?.subjects || [])
+  return Array.from(new Set(all))
+    .map(s => (s || '').trim())
+    .filter(Boolean)
+    .sort()
+})
+
+async function loadAvailableSubjects(headers) {
+  // falls dein Backend das erlaubt:
+  const res = await fetch(`${API_BASE}/api/students`, { headers })
+  if (res.ok) {
+    allStudents.value = await res.json()
+  } else {
+    console.warn('Konnte Subjects nicht laden, Status:', res.status)
+    allStudents.value = []
+  }
+}
 
 async function loadData() {
   loading.value = true
@@ -21,13 +41,17 @@ async function loadData() {
     const token = await getAccessTokenSilently()
     const headers = { Authorization: `Bearer ${token}` }
 
-    // 1. Basis-User Daten holen (Name, Email)
     const userRes = await fetch(`${API_BASE}/api/users/me`, { headers })
     if (userRes.ok) userForm.value = await userRes.json()
 
-    // 2. Studenten-Profil Daten holen
     const studentRes = await fetch(`${API_BASE}/api/students/me`, { headers })
-    if (studentRes.ok) studentForm.value = await studentRes.json()
+    if (studentRes.ok) {
+      studentForm.value = await studentRes.json()
+      // ✅ absichern
+      if (!Array.isArray(studentForm.value.subjects)) studentForm.value.subjects = []
+    }
+
+    await loadAvailableSubjects(headers)
   } catch (e) {
     console.error("Fehler beim Laden:", e)
   } finally {
@@ -35,38 +59,44 @@ async function loadData() {
   }
 }
 
+
 async function saveProfile() {
   saving.value = true
   message.value = ''
   try {
     const token = await getAccessTokenSilently()
-    const headers = { 
+    const headers = {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}` 
+      Authorization: `Bearer ${token}`
     }
 
-    // A) User-Update (Name/Email) -> PATCH
-    await fetch(`${API_BASE}/api/users/me`, {
-      method: 'PATCH',
+    const uRes = await fetch(`${API_BASE}/api/users/me`, {
+      method: 'PUT',
       headers,
       body: JSON.stringify(userForm.value)
     })
 
-    // B) Student-Update (Profilfelder) -> PUT
     const sRes = await fetch(`${API_BASE}/api/students/me`, {
       method: 'PUT',
       headers,
       body: JSON.stringify(studentForm.value)
     })
 
-    if (sRes.ok) {
-      message.value = "Profil erfolgreich gespeichert! ✅"
-    }
+    if (sRes.ok || uRes.ok) message.value = "Profil erfolgreich gespeichert! ✅"
+    else message.value = "Fehler beim Speichern. ❌"
   } catch (e) {
     message.value = "Fehler beim Speichern. ❌"
   } finally {
     saving.value = false
   }
+}
+
+function addSubject() {
+  studentForm.value.subjects.push('')
+}
+
+function removeSubject(index) {
+  studentForm.value.subjects.splice(index, 1)
 }
 
 onMounted(loadData)
@@ -93,7 +123,29 @@ onMounted(loadData)
         </div>
 
         <hr />
-
+        <div class="section">
+          <datalist id="subjects-list">
+  <option v-for="s in availableSubjects" :key="s" :value="s"></option>
+</datalist>
+          <h3>Meine Fächer</h3>
+          <div class="subjects-container">
+            <div v-for="(sub, index) in studentForm.subjects" :key="index" class="subject-input-wrapper">
+              <input
+  v-model="studentForm.subjects[index]"
+  list="subjects-list"
+  type="text"
+  class="form-control subject-input"
+  placeholder="z.B. Mathe 1"
+/>
+              <button type="button" class="inner-remove-btn" @click="removeSubject(index)">✕</button>
+            </div>
+          </div>
+          
+          <button type="button" class="add-subject-btn" @click="addSubject">
+            + Fach hinzufügen
+          </button>
+        </div>
+        <hr />
         <div class="section">
           <h3>Studium & Profil</h3>
           <div class="form-group">
@@ -161,10 +213,63 @@ onMounted(loadData)
 }
 .form-control {
   width: 100%;
-  padding: 0.6rem;
-  border: 1px solid #ccc;
-  border-radius: 8px;
+  padding: 0.5rem;
+  border: 1px solid  #697C44;;
+  border-radius: 10px;
 }
+
+
+/* --- NEUES STYLING FÜR DIE FÄCHER --- */
+.subject-input-wrapper {
+  position: relative; /* Wichtig für die Positionierung des X */
+  margin-bottom: 0.8rem;
+  display: flex;
+  align-items: center;
+}
+
+.subject-input {
+  padding-right: 2.5rem; /* Platz lassen für das X rechts */
+}
+
+.inner-remove-btn {
+  position: absolute;
+  right: 10px;
+  background: none;
+  border: none;
+  color: #d9534f; /* Ein schönes Rot */
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  transition: transform 0.2s;
+}
+
+.inner-remove-btn:hover {
+  transform: scale(1.3);
+  color: #dc2e2b;
+  font-weight: bolder;
+}
+
+.add-subject-btn {
+  background-color: transparent;
+  color: #697C44;
+  border: 2px solid #697C44;
+  width: 100%;
+  border-radius: 50px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 0.5rem;
+  height: 40px;
+}
+
+.add-subject-btn:hover {
+  background-color: #a1b57b;
+  border-style: solid;
+  color: white;
+}
+/* ------------------------------------ */
+
 .save-btn {
   background-color: #697C44;
   color: white;
