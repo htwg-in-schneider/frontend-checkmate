@@ -70,8 +70,8 @@ async function saveProfile() {
       Authorization: `Bearer ${token}`
     }
 
-    await fetch(`${API_BASE}/api/users/me`, {
-      method: 'PATCH',
+    const uRes = await fetch(`${API_BASE}/api/users/me`, {
+      method: 'PUT',
       headers,
       body: JSON.stringify(userForm.value)
     })
@@ -82,7 +82,7 @@ async function saveProfile() {
       body: JSON.stringify(studentForm.value)
     })
 
-    if (sRes.ok) message.value = "Profil erfolgreich gespeichert! ✅"
+    if (sRes.ok || uRes.ok) message.value = "Profil erfolgreich gespeichert! ✅"
     else message.value = "Fehler beim Speichern. ❌"
   } catch (e) {
     message.value = "Fehler beim Speichern. ❌"
