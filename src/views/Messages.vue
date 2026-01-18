@@ -22,6 +22,14 @@ const activeThread = computed(() =>
   threads.value.find((t) => Number(t.tutorId) === Number(activeTutorId.value))
 )
 
+const messageFilter = ref("ALL") // ALL | STUDENT | TUTOR
+
+const filteredMessages = computed(() => {
+  const f = messageFilter.value
+  if (f === "ALL") return messages.value
+  return messages.value.filter(m => String(m.sender).toUpperCase() === f)
+})
+
 onMounted(async () => {
   await ensureAuth()
   await loadThreads()
@@ -200,6 +208,16 @@ function formatSender(sender) {
           </button>
         </div>
 
+
+          <div class="d-flex gap-2 align-items-center mb-2">
+  <label class="small text-muted mb-0">Filter:</label>
+  <select v-model="messageFilter" class="form-select" style="max-width: 220px;">
+    <option value="ALL">Alle</option>
+    <option value="TUTOR">Tutoren</option>
+    <option value="STUDENT">Matches</option>
+  </select>
+</div>
+
         <p v-if="loadingThreads">Lade Chats…</p>
         <p v-else-if="!threads.length" class="text-muted">Noch keine Nachrichten.</p>
 
@@ -235,6 +253,7 @@ function formatSender(sender) {
             </div>
           </div>
 
+
           <div class="chat-body">
             <p v-if="loadingMessages">Lade Nachrichten…</p>
 
@@ -243,9 +262,9 @@ function formatSender(sender) {
             </div>
 
             <div v-else class="chat-messages">
-              <div v-for="m in messages" :key="m.id || (String(m.createdAt) + m.text)" class="msg">
+              <div v-for="m in filteredMessages" :key="m.id || (String(m.createdAt) + m.text)" class="msg">
                 <div class="msg-meta small text-muted">
-                  {{ formatSender(m.sender) }} • {{ formatDateTime(m.createdAt) }}
+                {{ m.senderName || formatSender(m.sender) }} • {{ formatDateTime(m.createdAt) }}
                 </div>
                 <div class="msg-text">{{ m.text }}</div>
               </div>
