@@ -29,7 +29,12 @@ const routes = [
     component: () => import('@/views/AppRouter.vue'),
     beforeEnter: authGuard,
   },
-
+  {
+    path: '/admin',
+    name: 'AdminHome',
+    component: () => import('@/views/AdminHome.vue'),
+    beforeEnter: authGuard,
+  },
   {
     path: '/register',
     name: 'register',
