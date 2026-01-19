@@ -19,6 +19,8 @@ watchEffect(() => {
   // 👉 HIER entscheidest du, wohin geroutet wird
   if (roles.includes('tutor')) {
     router.replace('/tutor')
+  }else if (roles.includes('admin')) {
+    router.replace('/admin')
   } else {
     router.replace('/student')
   }

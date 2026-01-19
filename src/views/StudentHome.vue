@@ -23,7 +23,9 @@ function goMatches() {
 
 <template>
   <Navbar />
-
+ <div class="con text-center">
+      <h2 class="page-title">STUDENT</h2>
+    </div>
   <main class="page">
     <div class="cards">
       <button class="card card1" @click="goStudyPartner">
@@ -38,7 +40,7 @@ function goMatches() {
         <span>Unterrichts -<br />stunden</span>
       </button>
 
-      <button class="card card3" @click="goMatches">
+      <button class="card card4" @click="goMatches">
         <span>Meine Matches</span>
       </button>
 
@@ -48,6 +50,17 @@ function goMatches() {
 </template>
 
 <style scoped>
+.con {  
+    background: #f3efdf;
+    padding-top: 1.5rem;
+
+}
+.page-title{
+    margin: 0rem;
+    font-size: 50px;
+    font-weight: 700;
+    color:  rgba(105, 124, 68, 0.85);
+}
 .page {
   min-height: 100vh;
   background: #f3efdf;
@@ -83,15 +96,19 @@ function goMatches() {
 }
 
 .card1 {
-  background: rgba(105, 124, 68, 0.85);
+  background: rgb(92, 116, 45);
 }
 
 .card2 {
-  background: rgba(164, 108, 58, 0.85);
+  background: rgba(112, 132, 76, 0.85);
 }
 
 .card3 {
-  background: rgba(189, 207, 170, 1);
+  background: rgb(168, 190, 134);
+  color: #ffffff;
+}
+.card4 {
+  background: rgb(198, 217, 178);
   color: #ffffff;
 }
 

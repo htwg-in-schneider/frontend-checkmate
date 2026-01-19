@@ -20,7 +20,13 @@ function goLessons() {
 <template>
   <Navbar />
 
+   <div class="con text-center">
+      <h2 class="page-title">TUTOR</h2>
+    </div>
   <main class="page">
+    <div class="text-center">
+      <h2 class="page-title">ADMIN</h2>
+    </div>
     <div class="cards">
       <button class="card card1" @click="goCreateOffer">
         <span>Angebot<br />erstellen</span>
@@ -39,6 +45,19 @@ function goLessons() {
 </template>
 
 <style scoped>
+
+.con {  
+    background: #f3efdf;
+    padding-top: 1.5rem;
+
+}
+.page-title{
+    margin: 0rem;
+    font-size: 50px;
+    font-weight: 700;
+    color:   #a66a23;
+}
+
 .page {
   min-height: 100vh;
   background: #f3efdf;

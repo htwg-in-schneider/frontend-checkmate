@@ -29,12 +29,12 @@ function goHome() {
   // nen Auth0-Rollen-Claim
   const roles = user.value['https://checkmate.app/roles'] || [];
   
-  if (roles.includes('student')) {
-    router.push('/student');
-  } else if (roles.includes('tutor')) {
-    router.push('/tutor');
+   if (roles.includes('tutor')) {
+    router.replace('/tutor')
+  }else if (roles.includes('admin')) {
+    router.replace('/admin')
   } else {
-    router.push('/');
+    router.replace('/student')
   }
 
 }
@@ -156,12 +156,12 @@ onBeforeUnmount(() => document.removeEventListener("click", onDocumentClick))
 
       <!-- ✅ Burger statt Abmelden -->
       <div class="burger-wrap" v-if="!isLoading && isAuthenticated">
-        <button class="nav-btn burger-btn" @click.stop="toggleBurger" aria-label="Menü öffnen">
+      <button class="nav-btn burger-btn" aria-label="Menü öffnen">
           ☰
         </button>
 
-        <teleport to="body">
-          <div v-if="burgerOpen" class="burger-menu" @click.stop>
+  
+          <div class="burger-menu" >
             <button class="menu-item" @click="goHome">
                  Home
             </button>
@@ -183,7 +183,6 @@ onBeforeUnmount(() => document.removeEventListener("click", onDocumentClick))
           <hr class="menu-sep" />
 
          </div>
-        </teleport>
       </div>
 
       <button
@@ -247,7 +246,7 @@ onBeforeUnmount(() => document.removeEventListener("click", onDocumentClick))
   flex-direction: column;
   opacity: 0;
   visibility: hidden;
-    position: absolute;
+  position: absolute;
   right: 0;
   top: 100%; 
   background-color: white;
@@ -346,37 +345,63 @@ onBeforeUnmount(() => document.removeEventListener("click", onDocumentClick))
 /* ===== Burger Menü ===== */
 .burger-wrap {
   position: relative;
-}
-
-.burger-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.25);
-  z-index: 9998;
+  display: inline-block;
 }
 
 .burger-menu {
-  position: fixed;
-  top: 78px;
-  right: 14px;
-  width: 240px;
+  display: flex;
+  flex-direction: column;
+  
+  /* Initial versteckt */
+  opacity: 0;
+  visibility: hidden;
+  
+  position: absolute;
+  right: 0;
+  top: 100%; /* Direkt unter dem Button */
   background: white;
+  min-width: 220px;
   border-radius: 12px;
   box-shadow: 0 10px 26px rgba(0,0,0,0.18);
+  z-index: 1300;
+  margin-top: 5px;
   overflow: hidden;
-  z-index: 9999;
+  
+  /* Übergang wie beim Profil-Dropdown */
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+  transition-delay: 0.1s; 
+}
+
+/* Öffnen bei Hover über den gesamten burger-wrap */
+.burger-wrap:hover .burger-menu {
+  opacity: 1;
+  visibility: visible;
+  transition-delay: 0s;
+}
+
+/* Damit die Maus nicht "verloren geht", wenn eine kleine Lücke 
+   zwischen Button und Menü ist, fügen wir eine unsichtbare Brücke hinzu */
+.burger-menu::before {
+  content: "";
+  position: absolute;
+  top: -10px;
+  left: 0;
+  width: 100%;
+  height: 100px;
+  z-index: -1;
 }
 
 .menu-item {
   width: 100%;
   text-align: left;
-  padding: 12px 14px;
+  padding: 12px 16px;
   border: none;
   background: white;
   cursor: pointer;
   color: #333;
   font-size: 14px;
   font-weight: 600;
+  transition: background 0.2s;
 }
 
 .menu-item:hover {
@@ -394,6 +419,6 @@ onBeforeUnmount(() => document.removeEventListener("click", onDocumentClick))
 }
 
 .admin {
-  color: #2f5e2f;
+  color: #418841;
 }
 </style>

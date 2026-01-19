@@ -27,6 +27,24 @@ async function authedFetch(path) {
   return await res.json()
 }
 
+async function removeLike(userId) {
+  try {
+    const token = await getAccessTokenSilently()
+    const res = await fetch(`${API_BASE}/api/matches/like/${userId}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    if (!res.ok) throw new Error(`DELETE like failed: ${res.status}`)
+
+    // UI aktualisieren
+    await loadAll()
+  } catch (e) {
+    console.error(e)
+    error.value = 'Konnte Like nicht entfernen.'
+  }
+}
+
+
 async function loadAll() {
   loading.value = true
   error.value = null
@@ -92,6 +110,10 @@ function openChat(u) {
               <div class="badge match">MATCH</div>
               <button class="msg-btn" @click="openChat(u)">💬 Nachricht</button>
             </div>
+            <div class="actions-vertical">
+            <button class="remove" @click="removeLike(u.id)">Entfernen</button>
+            <div class="badge match">MATCH</div>
+            </div>
           </div>
         </div>
 
@@ -109,7 +131,10 @@ function openChat(u) {
               <div class="meta">{{ u.email || "" }}</div>
             </div>
 
+            <div class="actions-vertical">
+            <button class="remove" @click="removeLike(u.id)">Entfernen</button>
             <div class="badge waiting">WARTET</div>
+            </div>
           </div>
         </div>
 
@@ -125,18 +150,63 @@ function openChat(u) {
 </template>
 
 <style scoped>
+@media (min-width: 768px) {
+
+  .container
+  .title {
+    font-size: 50px;
+    margin-bottom: 1.5rem;
+  }
+  .subtitle {
+    font-size: 20px;        /* ✅ Überschrift nutzt volle Breite */
+  }
+
+  .tab {
+    padding: 0.55rem 0.7rem;   /* Tabs kleiner */
+    border-radius: 12px;
+    font-size: 0.95rem;
+  }
+
+  .item {
+    min-height: 130px;
+    padding: 0.7rem;           /* Karten kleiner */
+    border-radius: 14px;
+    gap: 0.7rem;
+  }
+
+    .item 
+    .avatar {
+    width: 70px;
+    height: 70px;
+    font-size: 25px;
+    flex-shrink: 0;
+    margin-right: 0.7rem;
+  }
+
+  .name { 
+    font-weight: 800;
+    font-size: 20px;
+   }
+  .info
+  .meta { font-size: 16px; color: rgba(0,0,0,0.65); }
+  .remove {
+    margin-bottom: 2rem;
+  }
+
+}
+
 .page {
   min-height: 100vh;
   background: #f3efdf;
   padding: 2rem 1rem;
 }
 .container {
-  max-width: 560px;
+  max-width: 760px;
   margin: 0 auto;
 }
 .title {
   font-weight: 800;
-  margin-bottom: 0.2rem;
+  margin-bottom: 0.8rem;
 }
 .subtitle {
   margin-bottom: 1.2rem;
@@ -171,7 +241,8 @@ function openChat(u) {
   padding: 0.9rem;
   display: flex;
   align-items: center;
-  gap: 0.9rem;
+  column-gap: 0.9rem;
+  
 }
 .avatar {
   width: 42px;
@@ -214,6 +285,7 @@ function openChat(u) {
   font-weight: 800;
   padding: 0.35rem 0.6rem;
   border-radius: 999px;
+  margin-top: 0.3rem;
 }
 .badge.match {
   background: rgba(31, 140, 76, 0.18);
@@ -222,6 +294,8 @@ function openChat(u) {
   background: rgba(164, 108, 58, 0.18);
 }
 
+.badge.match { background: rgba(31, 140, 76, 0.18); }
+.badge.waiting { background: rgba(164, 107, 58, 0.242); }
 .state {
   text-align: center;
   margin: 1.2rem 0;
@@ -236,6 +310,40 @@ function openChat(u) {
   gap: 0.8rem;
   justify-content: center;
 }
+.remove {
+  background: transparent;
+  border: 1.5px solid #d91a3d;
+  color: #d91a3d;
+  font-size: 0.75rem;
+  font-weight: 400;
+  padding: 0rem 0.6rem;
+  border-radius: 999px;
+  cursor: pointer;
+  height: 1.7rem;
+  transition: 
+    background-color 0.2s ease,
+    color 0.2s ease,
+    transform 0.05s ease;
+  
+}
+.remove:hover {
+  background: #d91a3d;
+  color: white;
+  font-weight: 800;
+}
+
+.remove:active {
+  transform: scale(0.96);
+  background: #a8122c;
+  border-color: #a8122c;
+}
+.actions-vertical {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end; /* rechts ausgerichtet */
+  gap: 0.4rem;
+}
+
 .btn {
   border: 0;
   border-radius: 14px;
