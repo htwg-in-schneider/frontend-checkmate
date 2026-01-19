@@ -10,6 +10,7 @@ import About from "@/views/About.vue"
 import FAQ from "@/views/FAQ.vue"
 import Datenschutz from "@/views/Datenschutz.vue"
 import AdminTransactions from "@/views/AdminTransactions.vue"
+import AdminUsersView from "@/views/AdminUsersView.vue"
 import Unterricht from "@/views/Unterricht.vue"
 import Messages from "@/views/Messages.vue"
 import AngebotErstellen from "@/views/AngebotErstellen.vue"
@@ -140,6 +141,13 @@ const routes = [
     name: "admintransactions",
     component: AdminTransactions
   },
+
+  {
+    path: "/adminusersview",
+    name: "adminusersview",
+    component: AdminUsersView
+  },
+
   {
     path: "/unterricht",
     name: "unterricht",

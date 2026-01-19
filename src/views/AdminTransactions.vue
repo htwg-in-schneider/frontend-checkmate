@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from "vue"
+import { ref, onMounted, computed } from "vue"
 import { useAuth0 } from "@auth0/auth0-vue"
 import { useRouter } from "vue-router"
 
@@ -10,6 +10,44 @@ const router = useRouter()
 const loading = ref(true)
 const error = ref(null)
 const rows = ref([])
+
+const search = ref("")
+
+const filteredRows = computed(() => {
+  const q = search.value.trim().toLowerCase()
+  if (!q) return rows.value
+
+  const includes = (v) => String(v ?? "").toLowerCase().includes(q)
+
+  return rows.value.filter((b) => {
+    // Datum auch in deinem Anzeigeformat durchsuchen
+    const startStr = formatDateTime(b.startAt)
+    const createdStr = formatDateTime(b.createdAt)
+
+    return (
+      includes(b.id) ||
+      includes(`id ${b.id+1}`)||
+      includes(`id${b.id+1}`)||
+      includes(b.tutorId) ||
+      includes(b.tutorName) ||
+      includes(b.studentName) ||
+      includes(b.studentOauthId) ||
+      includes(b.note) ||
+      includes(b.durationMinutes) ||
+      includes(`${b.durationMinutes} min`) ||
+      includes(`${b.durationMinutes}min`) ||
+  includes(`${Math.round((b.durationMinutes ?? 0) / 60)}h`) ||
+      includes(b.price) ||
+      includes(`${b.price} €`) ||
+      includes(`${b.price}€`) ||
+      includes(`${b.price}.00€`) ||
+      includes(`${b.price},00€`) ||
+      includes(startStr) ||
+      includes(createdStr) ||
+      includes(`{Erstellt: ${createdStr}`) 
+    )
+  })
+})
 
 onMounted(() => {
   load()
@@ -114,6 +152,8 @@ function goBack() {
       <div class="fw-semibold">Fehler</div>
       <div class="mt-1">{{ error }}</div>
 
+
+
       <div class="d-flex gap-2 mt-3">
         <button class="btn btn-outline-secondary" @click="goBack">Zurück</button>
         <button class="btn btn-outline-primary" @click="load">Nochmal versuchen</button>
@@ -121,9 +161,27 @@ function goBack() {
     </div>
 
     <div v-else>
+
+          <div class="d-flex flex-wrap gap-2 align-items-center mb-3">
+  <input
+    v-model="search"
+    type="search"
+    class="form-control"
+    style="max-width: 420px"
+    placeholder="Suchen (Tutor, Student, Datum, Notiz, Preis, ID …)"
+  />
+  <button v-if="search" class="btn btn-outline-secondary" @click="search = ''">
+    X
+  </button>
+
+  <div class="text-muted small ms-auto">
+    {{ filteredRows.length }} / {{ rows.length }}
+  </div>
+</div>
+
       <p v-if="!rows.length" class="text-muted">Keine Daten.</p>
 
-      <div v-for="b in rows" :key="b.id" class="border rounded p-3 mb-2">
+<div v-for="b in filteredRows" :key="b.id" class="border rounded p-3 mb-2">
         <div><strong>Tutor:</strong> {{ b.tutorName }} (ID {{ b.tutorId }})</div>
         <div><strong>Student:</strong> {{ b.studentName }} ({{ b.studentOauthId }})</div>
         <div>

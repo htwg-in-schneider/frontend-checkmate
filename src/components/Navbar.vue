@@ -166,7 +166,8 @@ onBeforeUnmount(() => document.removeEventListener("click", onDocumentClick))
                  Home
             </button>
   
-            <hr class="menu-sep" /> <button class="menu-item" @click="go('/study-partner')">Studypartner suchen</button>
+            <hr class="menu-sep" /> 
+            <button class="menu-item" @click="go('/study-partner')">Studypartner suchen</button>
            <button class="menu-item" @click="go('/tutoren')">Tutor suchen</button>
            <button class="menu-item" @click="go('/unterricht')">Unterrichtsstunden</button>
            <button class="menu-item" @click="go('/matches')">Meine Matches</button>
@@ -174,6 +175,9 @@ onBeforeUnmount(() => document.removeEventListener("click", onDocumentClick))
 
            <button v-if="isAdmin" class="menu-item admin" @click="go('/adminTransactions')">
              Alle Transaktionen
+           </button>
+           <button v-if="isAdmin" class="menu-item admin" @click="go('/adminUsersView')">
+             Userübersicht
            </button>
   
           <hr class="menu-sep" />

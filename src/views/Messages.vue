@@ -4,7 +4,8 @@ import { useAuth0 } from "@auth0/auth0-vue"
 import { useRoute, useRouter } from "vue-router"
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8081"
-const { isAuthenticated, loginWithRedirect, getAccessTokenSilently } = useAuth0()
+
+const { isAuthenticated, loginWithRedirect, getAccessTokenSilently, user } = useAuth0()
 const route = useRoute()
 const router = useRouter()
 
@@ -12,29 +13,46 @@ const loadingThreads = ref(true)
 const loadingMessages = ref(false)
 const error = ref(null)
 
-const threads = ref([])   // [{ tutorId, tutorName, lastText, lastAt }]
-const messages = ref([])  // [{ id, tutorId, sender, text, createdAt }]
-const activeTutorId = ref(null)
-const activeTutorName = ref("")
+const threads = ref([]) // [{ type, tutorId?, userOauthId?, title, lastText, updatedAt }]
+const messages = ref([])
+
+const active = ref({ type: null, tutorId: null, userOauthId: null })
 const draft = ref("")
 
-const activeThread = computed(() =>
-  threads.value.find((t) => Number(t.tutorId) === Number(activeTutorId.value))
-)
+const activeThread = computed(() => {
+  if (!active.value.type) return null
+  return threads.value.find((t) => {
+    if (active.value.type === "TUTOR") {
+      return t.type === "TUTOR" && Number(t.tutorId) === Number(active.value.tutorId)
+    }
+    return t.type === "USER" && String(t.userOauthId) === String(active.value.userOauthId)
+  })
+})
+
+const activeTitle = computed(() => activeThread.value?.title ?? "Chat")
 
 onMounted(async () => {
   await ensureAuth()
   await loadThreads()
 
   const qTutorId = route.query.tutorId
-  if (qTutorId) await openThread(Number(qTutorId))
+  const qUser = route.query.user
+
+  if (qTutorId) await openTutorThread(Number(qTutorId))
+  else if (qUser) await openUserThread(String(qUser))
 })
 
 watch(
   () => route.query.tutorId,
   async (newId) => {
-    if (!newId) return
-    await openThread(Number(newId))
+    if (newId) await openTutorThread(Number(newId))
+  }
+)
+
+watch(
+  () => route.query.user,
+  async (newUser) => {
+    if (newUser) await openUserThread(String(newUser))
   }
 )
 
@@ -72,18 +90,19 @@ async function loadThreads() {
   }
 }
 
-async function openThread(tutorId) {
-  if (!tutorId) return
-  activeTutorId.value = tutorId
-
-  const t = threads.value.find((x) => Number(x.tutorId) === Number(tutorId))
-  activeTutorName.value = t?.tutorName || `Tutor #${tutorId}`
-
+async function openTutorThread(tutorId) {
+  active.value = { type: "TUTOR", tutorId, userOauthId: null }
   router.replace({ path: "/messages", query: { tutorId } })
-  await loadMessages(tutorId)
+  await loadTutorMessages(tutorId)
 }
 
-async function loadMessages(tutorId) {
+async function openUserThread(otherOauthId) {
+  active.value = { type: "USER", tutorId: null, userOauthId: otherOauthId }
+  router.replace({ path: "/messages", query: { user: otherOauthId } })
+  await loadUserMessages(otherOauthId)
+}
+
+async function loadTutorMessages(tutorId) {
   loadingMessages.value = true
   error.value = null
   try {
@@ -100,23 +119,43 @@ async function loadMessages(tutorId) {
   }
 }
 
+async function loadUserMessages(otherOauthId) {
+  loadingMessages.value = true
+  error.value = null
+  try {
+    const res = await fetchWithAuth(
+      `${API_BASE}/api/my/messages/users/${encodeURIComponent(otherOauthId)}`
+    )
+    if (!res.ok) {
+      const txt = await res.text().catch(() => "")
+      throw new Error(`Messages laden fehlgeschlagen (${res.status}): ${txt}`)
+    }
+    messages.value = await res.json()
+  } catch (e) {
+    error.value = e?.message ?? String(e)
+  } finally {
+    loadingMessages.value = false
+  }
+}
+
 async function send() {
   const text = String(draft.value || "").trim()
-  if (!activeTutorId.value) {
-    error.value = "Kein Tutor ausgewählt."
+  if (!text) return
+
+  if (!active.value.type) {
+    error.value = "Kein Chat ausgewählt."
     return
   }
-  if (!text) return
 
   error.value = null
 
   try {
-    if (!isAuthenticated.value) {
-      await loginWithRedirect({ appState: { target: `/messages?tutorId=${activeTutorId.value}` } })
-      return
-    }
+    const url =
+      active.value.type === "TUTOR"
+        ? `${API_BASE}/api/my/messages/tutors/${active.value.tutorId}`
+        : `${API_BASE}/api/my/messages/users/${encodeURIComponent(active.value.userOauthId)}`
 
-    const res = await fetchWithAuth(`${API_BASE}/api/my/messages/tutors/${activeTutorId.value}`, {
+    const res = await fetchWithAuth(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text }),
@@ -128,7 +167,11 @@ async function send() {
     }
 
     draft.value = ""
-    await Promise.all([loadMessages(activeTutorId.value), loadThreads()])
+
+    if (active.value.type === "TUTOR") await loadTutorMessages(active.value.tutorId)
+    else await loadUserMessages(active.value.userOauthId)
+
+    await loadThreads()
   } catch (e) {
     error.value = e?.message ?? String(e)
   }
@@ -146,7 +189,6 @@ function formatDateTime(dt) {
   if (Array.isArray(dt)) {
     const [y, mo, d, h = 0, mi = 0, s = 0] = dt
     const pad = (n) => String(n).padStart(2, "0")
-    // ISO build:
     const iso = `${y}-${pad(mo)}-${pad(d)}T${pad(h)}:${pad(mi)}:${pad(s)}`
     const date = new Date(iso)
     if (isNaN(date.getTime())) return `${pad(d)}.${pad(mo)}.${y} ${pad(h)}:${pad(mi)}`
@@ -182,6 +224,10 @@ function formatSender(sender) {
   if (s === "TUTOR") return "TUTOR"
   return "DU"
 }
+function formatSenderForDirect(m) {
+
+  return m?.senderName || "Match"
+}
 </script>
 
 <template>
@@ -205,33 +251,32 @@ function formatSender(sender) {
 
         <button
           v-for="t in threads"
-          :key="t.tutorId"
+          :key="t.type + ':' + (t.tutorId ?? t.userOauthId)"
           class="thread-item"
-          :class="{ active: Number(t.tutorId) === Number(activeTutorId) }"
-          @click="openThread(t.tutorId)"
+          :class="{
+            active:
+              (t.type === 'TUTOR' && active.type === 'TUTOR' && Number(t.tutorId) === Number(active.tutorId)) ||
+              (t.type === 'USER' && active.type === 'USER' && String(t.userOauthId) === String(active.userOauthId))
+          }"
+          @click="t.type === 'TUTOR' ? openTutorThread(t.tutorId) : openUserThread(t.userOauthId)"
         >
-          <div class="fw-semibold">{{ t.tutorName }}</div>
+          <div class="fw-semibold">{{ t.title }}</div>
           <div class="small text-muted text-truncate">{{ t.lastText || "—" }}</div>
-
-          <!-- ✅ hier das richtige Format -->
-          <div class="small text-muted">
-            {{ formatDateTime(t.lastAt || t.updatedAt) }}
-          </div>
+          <div class="small text-muted">{{ formatDateTime(t.updatedAt) }}</div>
         </button>
       </aside>
 
       <!-- RIGHT -->
       <section class="chat">
-        <div v-if="!activeTutorId" class="text-muted">
-          Wähle links einen Chat aus oder klicke bei einem Tutor auf „Kontaktieren“.
+        <div v-if="!active.type" class="text-muted">
+          Wähle links einen Chat aus oder klicke bei einem Tutor/Match auf „Nachricht“.
         </div>
 
         <div v-else>
           <div class="chat-header">
-            <div class="fw-semibold">Chat mit {{ activeTutorName }}</div>
+            <div class="fw-semibold">Chat mit {{ activeTitle }}</div>
             <div class="small text-muted" v-if="activeThread">
-              Letzte Aktivität:
-              {{ formatDateTime(activeThread.lastAt || activeThread.updatedAt) }}
+              Letzte Aktivität: {{ formatDateTime(activeThread.updatedAt) }}
             </div>
           </div>
 
@@ -243,9 +288,18 @@ function formatSender(sender) {
             </div>
 
             <div v-else class="chat-messages">
-              <div v-for="m in messages" :key="m.id || (String(m.createdAt) + m.text)" class="msg">
+              <div
+                v-for="m in messages"
+                :key="m.id || (String(m.createdAt) + m.text)"
+                class="msg"
+              >
                 <div class="msg-meta small text-muted">
-                  {{ formatSender(m.sender) }} • {{ formatDateTime(m.createdAt) }}
+                  {{
+                    active.type === "USER"
+                      ? formatSenderForDirect(m)
+                      : (m.senderName || formatSender(m.sender))
+                  }}
+                  • {{ formatDateTime(m.createdAt) }}
                 </div>
                 <div class="msg-text">{{ m.text }}</div>
               </div>
