@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, computed, watch } from "vue"
+import { ref, onMounted, onUnmounted, computed, watch } from "vue"
 import TutorCard from "@/components/TutorCard.vue"
 import TutorFilter from "@/components/TutorFilter.vue"
 import { useAuth0 } from "@auth0/auth0-vue"
@@ -16,11 +16,11 @@ const tutors = ref([])
 const categories = ref([])
 const loading = ref(true)
 const error = ref(null)
-
+const offers = ref([])
 const backendProfile = ref(null)
 const isAdmin = ref(false)
 
-// Filter-States (kommen aus TutorFilter)
+// Filter-States
 const searchName = ref("")
 const selectedCategory = ref("")
 
@@ -136,9 +136,21 @@ const filteredAvailableTimes = computed(() => {
 })
 
 onMounted(async () => {
-  await Promise.all([fetchTutors(), fetchCategories()])
+  window.addEventListener("offer-deleted", onOfferDeleted)
+
+  await Promise.all([fetchTutors(), fetchCategories(), fetchOffers()])
   if (isAuthenticated.value) await loadBackendProfile()
 })
+
+onUnmounted(() => {
+  window.removeEventListener("offer-deleted", onOfferDeleted)
+})
+
+function onOfferDeleted(e) {
+  const offerId = e?.detail?.offerId
+  if (!offerId) return
+  offers.value = (offers.value || []).filter((o) => o.offerId !== offerId)
+}
 
 async function loadBackendProfile() {
   try {
@@ -162,11 +174,6 @@ async function loadBackendProfile() {
 
 async function createTutor() {
   try {
-    if (!isAdmin.value) {
-      alert("Nur Admins dürfen Tutor:innen erstellen.")
-      return
-    }
-
     const token = await getAccessTokenSilently()
     const response = await fetch(`${API_BASE}/api/tutors`, {
       method: "POST",
@@ -216,16 +223,54 @@ async function fetchCategories() {
   }
 }
 
-const filteredTutors = computed(() => {
-  if (!searchName.value && !selectedCategory.value) return tutors.value
+async function fetchOffers() {
+  try {
+    const res = await fetch(`${API_BASE}/api/offers`)
+    if (!res.ok) throw new Error(`HTTP Offers: ${res.status}`)
+    const data = await res.json()
 
-  return tutors.value.filter((tutor) => {
+    offers.value = (data || []).map((o) => ({
+      // ✅ nur fürs Rendering-Key
+      cardKey: `offer-${o.id}`,
+      offerId: o.id,
+      isOffer: true,
+
+      // ✅ TutorCard/Booking/Reviews brauchen die Tutor-ID als id (Long)
+      tutorId: o.tutorId,
+      id: o.tutorId,
+
+      name: o.ownerName || "Tutor",
+      image: null,
+      avatarText: (o.ownerName || "T").trim(),
+
+      subject: o.subject,
+      semester: o.semester,
+      hourlyRate: o.hourlyRate,
+      createdAt: o.createdAt,
+    }))
+  } catch (e) {
+    console.error("fetchOffers failed:", e)
+  }
+}
+
+const combinedCards = computed(() => {
+  return [...offers.value, ...(tutors.value || [])]
+})
+
+const filteredTutors = computed(() => {
+  const list = combinedCards.value
+
+  if (!searchName.value && !selectedCategory.value) return list
+
+  return list.filter((item) => {
     const nameMatches =
       !searchName.value ||
-      (tutor.name || "").toLowerCase().includes(searchName.value.toLowerCase())
+      (item.name || "").toLowerCase().includes(searchName.value.toLowerCase())
 
     const categoryMatches =
-      !selectedCategory.value || tutor.category === selectedCategory.value
+      !selectedCategory.value ||
+      item.category === selectedCategory.value ||
+      item.subject === selectedCategory.value
 
     return nameMatches && categoryMatches
   })
@@ -240,9 +285,10 @@ function handleTutorDeleted(id) {
   tutors.value = tutors.value.filter((t) => t.id !== id)
 }
 
-function openContact(tutor) {
-  if (!tutor?.id) return
-  router.push({ path: "/messages", query: { tutorId: tutor.id } })
+function openContact(item) {
+  const id = item?.tutorId ?? item?.id
+  if (!id) return
+  router.push({ path: "/messages", query: { tutorId: id } })
 }
 
 async function openBookingModal(tutor) {
@@ -372,18 +418,15 @@ watch(
 </script>
 
 <template>
-  <!-- ✅ WICHTIG: wrapper zurück -> Hintergrund kommt wieder -->
   <div class="tutor-page">
     <Navbar />
 
-    <!-- Header wie Student-Seite -->
     <section class="py-5 text-center">
       <div class="container">
         <h2 class="fw-bold">Unsere Tutor:innen</h2>
       </div>
     </section>
 
-    <!-- ✅ Filter direkt, damit es groß aufklappt -->
     <TutorFilter :subjects="categories" @tutorUpdate="handleTutorUpdate" />
 
     <div class="container py-4 tutorlist">
@@ -393,15 +436,13 @@ watch(
         </button>
       </div>
 
-      <p class="text-end text-muted" v-else-if="!isLoading && isAuthenticated && !isAdmin">
-        (Nur Admins können Tutor:innen erstellen.)
-      </p>
+      
 
       <p v-if="loading" class="text-center">Lade Tutor:innen…</p>
       <p v-else-if="error" class="text-center text-danger">{{ error }}</p>
 
       <div v-else class="row g-4">
-        <div v-for="tutor in filteredTutors" :key="tutor.id" class="col-md-4">
+        <div v-for="tutor in filteredTutors" :key="tutor.cardKey ?? tutor.id" class="col-md-4">
           <TutorCard
             :tutor="tutor"
             :is-admin="isAdmin"
@@ -530,7 +571,6 @@ watch(
   box-shadow: 0 4px 20px rgba(0,0,0,0.2);
 }
 
-/* ✅ Hintergrund wieder da */
 .tutor-page {
   min-height: 100vh;
   background-image:
@@ -539,7 +579,7 @@ watch(
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  padding-top: 0;   /* Header übernimmt spacing */
+  padding-top: 0;
   padding-bottom: 2rem;
 }
 </style>

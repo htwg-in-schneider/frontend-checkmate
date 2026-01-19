@@ -15,26 +15,64 @@ const tutor = ref(null);
 const loading = ref(true);
 const error = ref(null);
 const showReviews = ref(false);
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8081"
+
+function readLocalOffers() {
+  try {
+    return JSON.parse(localStorage.getItem("checkmate_offers") || "[]")
+  } catch {
+    return []
+  }
+}
 
 onMounted(async () => {
   try {
-   // const res = await fetch(`http://localhost:8081/api/tutors/${props.id}`);
-    const res = `${import.meta.env.VITE_API_BASE_URL}/api/tutors/${props.id}`;
+    loading.value = true
+    error.value = null
 
+    const idStr = String(props.id)
 
-    if (res.status === 404) {
-      error.value = "Tutor:in nicht gefunden.";
-    } else if (!res.ok) {
-      throw new Error(res.status);
-    } else {
-      tutor.value = await res.json();
+    // ✅ Offer-Detail
+    if (idStr.startsWith("offer-")) {
+      const offerId = idStr.replace("offer-", "")
+      const o = readLocalOffers().find((x) => String(x.id) === offerId)
+
+      if (!o) {
+        error.value = "Angebot nicht gefunden."
+      } else {
+        tutor.value = {
+          id: idStr,
+          name: o.tutorName,
+          image: o.tutorImage,
+          subject: o.subject,
+          semester: o.semester ?? null,
+          hourlyRate: o.hourlyRate,
+          description: o.description,
+          offerTitle: o.title,
+          durationMinutes: o.durationMinutes,
+          location: o.location,
+          isOffer: true,
+        }
+      }
+      return
     }
 
+    // ✅ normales Tutor-Detail
+    const url = `${API_BASE}/api/tutors/${props.id}`
+    const res = await fetch(url)
+
+    if (res.status === 404) {
+      error.value = "Tutor:in nicht gefunden."
+    } else if (!res.ok) {
+      throw new Error(res.status)
+    } else {
+      tutor.value = await res.json()
+    }
   } catch (err) {
-    console.error(err);
-    error.value = "Fehler beim Laden.";
+    console.error(err)
+    error.value = "Fehler beim Laden."
   } finally {
-    loading.value = false;
+    loading.value = false
   }
 });
 

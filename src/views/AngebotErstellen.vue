@@ -8,7 +8,8 @@ const { isAuthenticated, isLoading, getAccessTokenSilently, loginWithRedirect } 
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8081"
 const PROFILE_URL = `${API_BASE}/api/profile`
-const OFFERS_URL = `${API_BASE}/api/offers` // <-- ggf. anpassen
+const OFFERS_URL = `${API_BASE}/api/offers`
+const CATEGORY_URL = `${API_BASE}/api/category`  // ✅ neu
 
 const role = ref(null)
 const roleError = ref(null)
@@ -17,29 +18,24 @@ const loading = ref(false)
 const error = ref(null)
 const ok = ref(false)
 
-// Angebot-Form (feel free to extend)
+// ✅ Kategorien für Dropdown
+const categories = ref([])
+const categoriesLoading = ref(true)
+const categoriesError = ref(null)
+
+// Angebot-Form
 const offer = ref({
-  "title": "...",
-  "subject": "...",
-  "description": "...",
-  "hourlyRate": 25,
-  "durationMinutes": 60,
-  "location": "Online"
+  subject: "",          // ✅ wird per Dropdown gesetzt
+  hourlyRate: 25,
+  semester: 1, //
 })
 
-// ---------- helpers ----------
-function lsKey() {
-  return "checkmate_offers"
-}
-function readLocalOffers() {
-  try {
-    return JSON.parse(localStorage.getItem(lsKey()) || "[]")
-  } catch {
-    return []
-  }
-}
-function writeLocalOffers(items) {
-  localStorage.setItem(lsKey(), JSON.stringify(items))
+function prettyCategory(c) {
+  return String(c)
+    .replaceAll("_", " ")
+    .replace(/(\D)(\d)/g, "$1 $2") // MATHE1 -> MATHE 1
+    .toLowerCase()
+    .replace(/(^|\s)\S/g, (m) => m.toUpperCase())
 }
 
 // ---------- auth / role ----------
@@ -74,6 +70,30 @@ function isTutorOrAdmin() {
   return role.value === "TUTOR" || role.value === "ADMIN"
 }
 
+// ✅ Kategorien laden (gleiche Quelle wie Filter)
+async function fetchCategories() {
+  categoriesLoading.value = true
+  categoriesError.value = null
+  try {
+    const res = await fetch(CATEGORY_URL)
+    if (!res.ok) throw new Error(`HTTP-Fehler Kategorien: ${res.status}`)
+    const data = await res.json()
+
+    // data kann z.B. ["MATHE1","BWL", ...] sein
+    categories.value = Array.isArray(data) ? data : []
+
+    // optional: default auswählen
+    if (!offer.value.subject && categories.value.length) {
+      offer.value.subject = categories.value[0]
+    }
+  } catch (e) {
+    categoriesError.value = e?.message ?? String(e)
+    categories.value = []
+  } finally {
+    categoriesLoading.value = false
+  }
+}
+
 // ---------- submit ----------
 async function createOffer() {
   ok.value = false
@@ -81,55 +101,32 @@ async function createOffer() {
   loading.value = true
 
   try {
+
     const loggedIn = await ensureLoggedIn()
     if (!loggedIn) return
 
-    // wenn ihr Tutor-Rollen wirklich nutzt:
     if (role.value && !isTutorOrAdmin()) {
       throw new Error("Nur Tutor:innen dürfen Angebote erstellen.")
     }
 
     // Basic validation
-    if (!offer.value.title.trim()) throw new Error("Bitte Titel angeben.")
-    if (!offer.value.subject.trim()) throw new Error("Bitte Fach angeben.")
+    if (!offer.value.subject.trim()) throw new Error("Bitte Fach auswählen.")
     if (Number(offer.value.hourlyRate) <= 0) throw new Error("Stundensatz muss > 0 sein.")
 
-    // ---- Versuch: Backend ----
-    try {
-      const token = await getAccessTokenSilently()
-      const res = await fetch(OFFERS_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(offer.value),
-      })
+    const token = await getAccessTokenSilently()
+    const res = await fetch(OFFERS_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(offer.value),
+    })
 
-      if (res.ok) {
-        ok.value = true
-        router.push("/meine-angebote")
-        return
-      }
-
-      // Wenn Backend nicht existiert/kein Endpoint:
-      // wir fallen auf localStorage zurück
-      console.warn("Backend createOffer failed:", res.status)
-    } catch (backendErr) {
-      console.warn("Backend createOffer error, fallback to localStorage:", backendErr)
+    if (!res.ok) {
+      const txt = await res.text().catch(() => "")
+      throw new Error(`Angebot konnte nicht gespeichert werden (${res.status}): ${txt}`)
     }
-
-    // ---- Fallback: localStorage ----
-    const items = readLocalOffers()
-    const newItem = {
-      id: crypto?.randomUUID?.() ?? String(Date.now()),
-      ...offer.value,
-      createdAt: new Date().toISOString(),
-      // optional: owner marker
-      owner: "me",
-    }
-    items.unshift(newItem)
-    writeLocalOffers(items)
 
     ok.value = true
     router.push("/meine-angebote")
@@ -141,6 +138,7 @@ async function createOffer() {
 }
 
 onMounted(async () => {
+  await fetchCategories()
   if (isAuthenticated.value) {
     await loadRole()
   }
@@ -183,21 +181,40 @@ onMounted(async () => {
                 Dein Account ist keine Tutor-Rolle ({{ role }}). Angebote sind nur für Tutor:innen.
               </div>
 
-              <div class="mb-3">
-                <label class="form-label fw-bold">Titel</label>
-                <input v-model="offer.title" class="form-control" placeholder="z.B. Mathe 1 Nachhilfe" />
-              </div>
+            
 
               <div class="mb-3">
-                <label class="form-label fw-bold">Fach</label>
-                <input v-model="offer.subject" class="form-control" placeholder="z.B. Mathe 1" />
-              </div>
+  <label class="form-label fw-bold">Fach</label>
 
-              <div class="mb-3">
-                <label class="form-label fw-bold">Beschreibung</label>
-                <textarea v-model="offer.description" class="form-control" rows="4"
-                  placeholder="Kurz beschreiben, wie du unterstützt, Niveau, Inhalte, etc."></textarea>
-              </div>
+  <p v-if="categoriesLoading" class="text-muted small mb-2">Lade Fächer…</p>
+  <p v-else-if="categoriesError" class="text-danger small mb-2">
+    Fächer konnten nicht geladen werden: {{ categoriesError }}
+  </p>
+
+  <select
+    v-model="offer.subject"
+    class="form-select"
+    :disabled="categoriesLoading || !categories.length"
+  >
+    <option value="" disabled>Bitte auswählen…</option>
+    <option v-for="c in categories" :key="c" :value="c">
+  {{ prettyCategory(c) }}
+</option>
+  </select>
+
+  <div class="form-text" v-if="categories.length">
+    Gleiche Fächer wie in der Tutor-Suche.
+  </div>
+</div>
+
+             <div class="mb-3">
+  <label class="form-label fw-bold">Semester</label>
+  <select v-model.number="offer.semester" class="form-select">
+    <option v-for="n in 10" :key="n" :value="n">
+      {{ n }}. Semester
+    </option>
+  </select>
+</div>
 
               <div class="row g-3">
                 <div class="col-md-6">
@@ -205,25 +222,10 @@ onMounted(async () => {
                   <input v-model.number="offer.hourlyRate" type="number" min="1" class="form-control" />
                 </div>
 
-                <div class="col-md-6">
-                  <label class="form-label fw-bold">Dauer</label>
-                  <select v-model.number="offer.durationMinutes" class="form-select">
-                    <option :value="30">30 Minuten</option>
-                    <option :value="60">60 Minuten</option>
-                    <option :value="90">90 Minuten</option>
-                    <option :value="120">120 Minuten</option>
-                  </select>
-                </div>
+                
               </div>
 
-              <div class="mt-3">
-                <label class="form-label fw-bold">Ort</label>
-                <select v-model="offer.location" class="form-select">
-                  <option>Online</option>
-                  <option>Vor Ort</option>
-                  <option>Hybrid</option>
-                </select>
-              </div>
+             
 
               <p v-if="error" class="text-danger mt-3">{{ error }}</p>
 

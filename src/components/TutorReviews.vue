@@ -31,7 +31,7 @@ async function fetchReviews() {
     reviews.value = await res.json();
   } catch (e) {
     console.error('Fehler beim Laden der Reviews:', e);
-    error.value = 'Bewertungen konnten nicht geladen werden.';
+    error.value = 'Noch keine Bewertungen vorhanden.';
   } finally {
     loading.value = false;
   }

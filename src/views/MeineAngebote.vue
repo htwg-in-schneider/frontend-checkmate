@@ -3,9 +3,9 @@ import { ref, onMounted } from "vue"
 import { useAuth0 } from "@auth0/auth0-vue"
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8081"
-const OFFERS_URL = `${API_BASE}/api/offers` // <-- ggf. anpassen
+const OFFERS_URL = `${API_BASE}/api/offers`
 
-const { isAuthenticated, isLoading, getAccessTokenSilently, loginWithRedirect } = useAuth0()
+const { isAuthenticated, isLoading, getAccessTokenSilently, loginWithRedirect, user } = useAuth0()
 
 const offers = ref([])
 const loading = ref(true)
@@ -52,7 +52,8 @@ async function loadOffers() {
     }
 
     // ---- Fallback: localStorage ----
-    offers.value = readLocalOffers().filter((o) => o.owner === "me")
+    const me = user.value?.sub
+    offers.value = readLocalOffers().filter((o) => o.type === "offer" && o.ownerSub === me)
   } catch (e) {
     error.value = e?.message ?? String(e)
   } finally {
@@ -71,8 +72,13 @@ async function deleteOffer(offerId) {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       })
+
       if (res.ok) {
         offers.value = offers.value.filter((o) => o.id !== offerId)
+
+        // ✅ TutorList sofort informieren
+        window.dispatchEvent(new CustomEvent("offer-deleted", { detail: { offerId } }))
+
         return
       }
       console.warn("Backend deleteOffer failed:", res.status)
@@ -84,7 +90,11 @@ async function deleteOffer(offerId) {
     const items = readLocalOffers()
     const next = items.filter((o) => o.id !== offerId)
     writeLocalOffers(next)
+
     offers.value = offers.value.filter((o) => o.id !== offerId)
+
+    // ✅ TutorList sofort informieren
+    window.dispatchEvent(new CustomEvent("offer-deleted", { detail: { offerId } }))
   } catch (e) {
     error.value = e?.message ?? String(e)
   }
@@ -136,35 +146,27 @@ onMounted(loadOffers)
               <div v-for="o in offers" :key="o.id" class="col-md-6">
                 <div class="card shadow-sm h-100">
                   <div class="card-body">
-                    <h5 class="card-title mb-1">{{ o.title }}</h5>
-                    <div class="text-muted small mb-2">{{ o.subject }} · {{ o.location ?? "—" }}</div>
-
-                    <p class="card-text">{{ o.description || "—" }}</p>
-
+                    <div class="text-muted small mb-2">{{ o.subject }}</div>
+                    <div class="text-muted small mt-2">
+                      Semester: {{ (o.semester)}}
+                    </div>
                     <div class="d-flex gap-2 mt-3">
-                      <span class="badge text-bg-secondary">
-                        {{ o.durationMinutes ?? 60 }} min
-                      </span>
                       <span class="badge text-bg-success">
                         {{ o.hourlyRate ?? 0 }} € / h
                       </span>
                     </div>
-
+                    <div class="text-muted small mt-2">
+                      Erstellt: {{ (o.createdAt || "").slice(0, 10) || "—" }}
+                    </div>
                     <div class="d-flex justify-content-end mt-3">
                       <button class="btn btn-outline-danger btn-sm" @click="deleteOffer(o.id)">
                         Löschen
                       </button>
                     </div>
-
-                    <div class="text-muted small mt-2">
-                      Erstellt: {{ (o.createdAt || "").slice(0, 10) || "—" }}
-                    </div>
                   </div>
                 </div>
               </div>
             </div>
-
-            
           </div>
         </template>
       </div>

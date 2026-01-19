@@ -24,9 +24,6 @@ function goLessons() {
       <h2 class="page-title">TUTOR</h2>
     </div>
   <main class="page">
-    <div class="text-center">
-      <h2 class="page-title">ADMIN</h2>
-    </div>
     <div class="cards">
       <button class="card card1" @click="goCreateOffer">
         <span>Angebot<br />erstellen</span>

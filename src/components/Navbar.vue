@@ -1,6 +1,6 @@
 <script setup>
-import logo from '@/assets/img/logoheader2.png'
-import { useAuth0 } from '@auth0/auth0-vue'
+import logo from "@/assets/img/logoheader2.png"
+import { useAuth0 } from "@auth0/auth0-vue"
 import { useCartStore } from "@/stores/cart"
 import { computed, ref, onMounted, watch, onBeforeUnmount } from "vue"
 import { useRouter } from "vue-router"
@@ -11,46 +11,29 @@ const router = useRouter()
 const cart = useCartStore()
 const cartCount = computed(() => cart.count)
 
-const { loginWithRedirect, logout, isAuthenticated, isLoading, getAccessTokenSilently, user } = useAuth0()
+const {
+  loginWithRedirect,
+  logout,
+  isAuthenticated,
+  isLoading,
+  getAccessTokenSilently,
+  user,
+} = useAuth0()
 
 const onLoginClick = () => {
-  loginWithRedirect({
-    appState: { target: '/app' }
-  })
+  loginWithRedirect({ appState: { target: "/app" } })
 }
 
 const onLogoutClick = () => {
   logout({ logoutParams: { returnTo: window.location.origin + "/frontend-checkmate/" } })
 }
 
-function goHome() {
-  // Beispiel für ei
-  closeBurger(); // WICHTIG: Schließt das Menü nach dem Klick
-  // nen Auth0-Rollen-Claim
-  const roles = user.value['https://checkmate.app/roles'] || [];
-  
-   if (roles.includes('tutor')) {
-    router.replace('/tutor')
-  }else if (roles.includes('admin')) {
-    router.replace('/admin')
-  } else {
-    router.replace('/student')
-  }
-
-}
-
-function goCheckout() {
-  router.push("/checkout")
-}
-
-function goProfile() {
-  router.push("/edit-profile")
-}
-
 /* ==========================
-   ✅ ADMIN STATE + LOAD ROLE
+   ✅ ROLE STATE (backend)
    ========================== */
-const isAdmin = ref(false)
+const role = ref(null) // "STUDENT" | "TUTOR" | "ADMIN" | null
+const isAdmin = computed(() => role.value === "ADMIN")
+const isTutor = computed(() => role.value === "TUTOR" || role.value === "ADMIN") // Admin zählt wie Tutor
 
 async function loadBackendProfile() {
   try {
@@ -60,9 +43,9 @@ async function loadBackendProfile() {
     })
     if (!res.ok) throw new Error(`Profile failed: ${res.status}`)
     const profile = await res.json()
-    isAdmin.value = profile?.role === "ADMIN"
+    role.value = profile?.role ?? null
   } catch (e) {
-    isAdmin.value = false
+    role.value = null
   }
 }
 
@@ -70,26 +53,49 @@ watch(
   () => isAuthenticated.value,
   async (loggedIn) => {
     if (loggedIn) await loadBackendProfile()
-    else isAdmin.value = false
+    else role.value = null
   },
   { immediate: true }
 )
 
 /* ==========================
-   ✅ BURGER MENU
+   ✅ NAV
+   ========================== */
+function go(path) {
+  closeBurger()
+  router.push(path)
+}
+
+function goCheckout() {
+  closeBurger()
+  router.push("/checkout")
+}
+
+function goProfile() {
+  closeBurger()
+  router.push("/edit-profile")
+}
+
+function goHome() {
+  closeBurger()
+
+  // Wenn ihr Home-Routen pro Rolle habt:
+  if (role.value === "TUTOR") router.replace("/tutor")
+  else if (role.value === "ADMIN") router.replace("/admin")
+  else router.replace("/student")
+}
+
+/* ==========================
+   ✅ BURGER MENU (click-open)
    ========================== */
 const burgerOpen = ref(false)
 
 function toggleBurger() {
   burgerOpen.value = !burgerOpen.value
 }
+
 function closeBurger() {
   burgerOpen.value = false
-}
-
-function go(path) {
-  closeBurger()
-  router.push(path)
 }
 
 function logoutFromBurger() {
@@ -106,101 +112,101 @@ function onDocumentClick(e) {
   if (btn?.contains(e.target)) return
   closeBurger()
 }
+
 onMounted(() => document.addEventListener("click", onDocumentClick))
 onBeforeUnmount(() => document.removeEventListener("click", onDocumentClick))
 </script>
 
 <template>
- 
   <div class="header">
     <router-link to="/" class="logo">
       <img class="logo" :src="logo" alt="CheckMate Logo" />
     </router-link>
 
     <div class="right-Side">
-   
       <!-- Profil -->
-       
-   <div v-if="isAuthenticated" class="user-dropdown">
-    <button 
-      id="profile-btn" 
-      @click="goProfile"
-      class="avatar-wrapper"
-    >
-      <div class="avatar" :style="{ color: 'gray' }" >
-        {{ (user?.name || user?.nickname || '?').slice(0, 1).toUpperCase() }}
+      <div v-if="isAuthenticated" class="user-dropdown">
+        <button id="profile-btn" @click="goProfile" class="avatar-wrapper">
+          <div class="avatar" :style="{ color: 'gray' }">
+            {{ (user?.name || user?.nickname || "?").slice(0, 1).toUpperCase() }}
+          </div>
+        </button>
+
+        <div class="dropdown-content">
+          <button @click="goProfile">
+            <i class="bi bi-person"></i> Profil bearbeiten
+          </button>
+
+          <button @click="onLogoutClick" class="logout-item">
+            <i class="bi bi-box-arrow-right"></i> Abmelden
+          </button>
+        </div>
       </div>
-    </button>
-
-    <div class="dropdown-content">
-      <button @click="goProfile">
-        <i class="bi bi-person"></i> Profil bearbeiten
-      </button>
-
-      <button @click="onLogoutClick" class="logout-item">
-        <i class="bi bi-box-arrow-right"></i> Abmelden
-      </button>
-    </div>
-  </div>
-      
 
       <!-- Warenkorb -->
       <button
         v-if="isAuthenticated"
         class="nav-btn position-relative"
-        @click="router.push('/checkout')"
+        @click="goCheckout"
       >
         <i class="bi bi-cart"></i>
         <span v-if="cartCount > 0" class="cart-badge">{{ cartCount }}</span>
       </button>
 
-      <!-- ✅ Burger statt Abmelden -->
+      <!-- ✅ Burger -->
       <div class="burger-wrap" v-if="!isLoading && isAuthenticated">
-      <button class="nav-btn burger-btn" aria-label="Menü öffnen">
+        <button class="nav-btn burger-btn" aria-label="Menü öffnen" @click="toggleBurger">
           ☰
         </button>
 
-  
-          <div class="burger-menu" >
-            <button class="menu-item" @click="goHome">
-                 Home
-            </button>
-  
-            <hr class="menu-sep" /> 
-            <button class="menu-item" @click="go('/study-partner')">Studypartner suchen</button>
-           <button class="menu-item" @click="go('/tutoren')">Tutor suchen</button>
-           <button class="menu-item" @click="go('/unterricht')">Unterrichtsstunden</button>
-           <button class="menu-item" @click="go('/matches')">Meine Matches</button>
-           <button class="menu-item" @click="go('/messages')">Nachrichten</button>
+        <div class="burger-menu" :class="{ open: burgerOpen }">
+          <button class="menu-item" @click="goHome">Home</button>
 
-           <button v-if="isAdmin" class="menu-item admin" @click="go('/adminTransactions')">
-             Alle Transaktionen
-           </button>
-           <button v-if="isAdmin" class="menu-item admin" @click="go('/adminUsersView')">
-             Userübersicht
-           </button>
-  
           <hr class="menu-sep" />
 
-         </div>
+          <!-- ✅ Diese 3 nur für STUDENT -->
+          <button v-if="!isTutor" class="menu-item" @click="go('/study-partner')">
+            Studypartner suchen
+          </button>
+
+          <button v-if="!isTutor" class="menu-item" @click="go('/tutoren')">
+            Tutor suchen
+          </button>
+
+          <button v-if="!isTutor" class="menu-item" @click="go('/matches')">
+            Meine Matches
+          </button>
+
+          <!-- ✅ Für alle eingeloggten (Tutor+Student) -->
+          <button class="menu-item" @click="go('/unterricht')">
+            Unterrichtsstunden
+          </button>
+
+          <button class="menu-item" @click="go('/messages')">Nachrichten</button>
+
+          <!-- ✅ Admin -->
+          <button v-if="isAdmin" class="menu-item admin" @click="go('/adminTransactions')">
+            Alle Transaktionen
+          </button>
+          <button v-if="isAdmin" class="menu-item admin" @click="go('/adminUsersView')">
+            Userübersicht
+          </button>
+
+
+    
+        </div>
       </div>
 
-      <button
-        id="sign"
-        v-if="!isLoading && !isAuthenticated"
-        @click="onLoginClick"
-      >
+      <button id="sign" v-if="!isLoading && !isAuthenticated" @click="onLoginClick">
         Einloggen
       </button>
-
     </div>
   </div>
 </template>
 
 <style scoped>
 .header {
- 
-  background-color: #697C44;
+  background-color: #697c44;
   padding: 0.7rem 1.5rem;
   display: flex;
   justify-content: space-between;
@@ -210,7 +216,8 @@ onBeforeUnmount(() => document.removeEventListener("click", onDocumentClick))
   top: 0;
   z-index: 1200;
 }
-/* Dein Profil-Button Style */
+
+/* Profil */
 #profile-btn {
   background: none;
   border: none;
@@ -218,55 +225,48 @@ onBeforeUnmount(() => document.removeEventListener("click", onDocumentClick))
   cursor: pointer;
 }
 
-/* Die Avatar-Kreis-Logik */
 .avatar {
-  background-color: lightgray; /* Deine Farbe aus dem Tutor-Filter-Toggle */
+  background-color: lightgray;
   border: 1px solid gray;
-  border-radius: 50%; /* Perfekt rund */
-  width: 50px;        /* Feste Breite */
-  height: 50px;       /* Feste Höhe */
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: bold;
   font-size: 1.5rem;
   transition: transform 0.2s;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-  
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
-/* Dropdown Logik */
 .user-dropdown {
   position: relative;
   display: inline-block;
 }
 
 .dropdown-content {
-  display: flex; 
+  display: flex;
   flex-direction: column;
   opacity: 0;
   visibility: hidden;
   position: absolute;
   right: 0;
-  top: 100%; 
+  top: 100%;
   background-color: white;
   min-width: 180px;
-  box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
+  box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.2);
   z-index: 1300;
   border-radius: 8px;
   margin-top: 5px;
   overflow: hidden;
   transition: opacity 0.3s ease, visibility 0.3s ease;
-  transition-delay: 0.1s; 
+  transition-delay: 0.1s;
 }
 
-/* 2. Den Hover-Zustand anpassen */
 .user-dropdown:hover .dropdown-content {
   opacity: 1;
   visibility: visible;
-  
-  /* VERZÖGERUNG BEIM ÖFFNEN (Enter) */
-  /* Beim Drüberfahren soll es sofort (0s) erscheinen */
   transition-delay: 0s;
 }
 
@@ -286,13 +286,9 @@ onBeforeUnmount(() => document.removeEventListener("click", onDocumentClick))
   background-color: #f1f1f1;
 }
 
-.user-dropdown:hover .dropdown-content {
-  display: flex;
-}
-
 .logout-item {
   border-top: 1px solid #eee !important;
-  color: #a46c3a !important; /* Braunton für Logout */
+  color: #a46c3a !important;
 }
 
 .logo {
@@ -304,14 +300,15 @@ onBeforeUnmount(() => document.removeEventListener("click", onDocumentClick))
 
 @media (max-width: 750px) {
   .logo {
-    content: url('@/assets/img/logofooter.png');
+    content: url("@/assets/img/logofooter.png");
     width: 55px;
   }
 }
 
+/* Buttons */
 .nav-btn {
   background-color: #c5bfb3;
-  color: #697C44;
+  color: #697c44;
   border: none;
   border-radius: 10px;
   padding: 8px 14px;
@@ -320,10 +317,8 @@ onBeforeUnmount(() => document.removeEventListener("click", onDocumentClick))
   align-items: center;
   gap: 6px;
   position: relative;
-  font-weight:bolder;
+  font-weight: bolder;
 }
-
-/* Profil Button bleibt wie bei dir */
 
 .right-Side {
   display: flex;
@@ -342,53 +337,35 @@ onBeforeUnmount(() => document.removeEventListener("click", onDocumentClick))
   padding: 2px 6px;
 }
 
-/* ===== Burger Menü ===== */
+/* ===== Burger ===== */
 .burger-wrap {
   position: relative;
   display: inline-block;
 }
 
+/* default hidden */
 .burger-menu {
   display: flex;
   flex-direction: column;
-  
-  /* Initial versteckt */
   opacity: 0;
   visibility: hidden;
-  
   position: absolute;
   right: 0;
-  top: 100%; /* Direkt unter dem Button */
+  top: 100%;
   background: white;
   min-width: 220px;
   border-radius: 12px;
-  box-shadow: 0 10px 26px rgba(0,0,0,0.18);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.18);
   z-index: 1300;
-  margin-top: 5px;
+  margin-top: 8px;
   overflow: hidden;
-  
-  /* Übergang wie beim Profil-Dropdown */
-  transition: opacity 0.3s ease, visibility 0.3s ease;
-  transition-delay: 0.1s; 
+  transition: opacity 0.2s ease, visibility 0.2s ease;
 }
 
-/* Öffnen bei Hover über den gesamten burger-wrap */
-.burger-wrap:hover .burger-menu {
+/* open when clicked */
+.burger-menu.open {
   opacity: 1;
   visibility: visible;
-  transition-delay: 0s;
-}
-
-/* Damit die Maus nicht "verloren geht", wenn eine kleine Lücke 
-   zwischen Button und Menü ist, fügen wir eine unsichtbare Brücke hinzu */
-.burger-menu::before {
-  content: "";
-  position: absolute;
-  top: -10px;
-  left: 0;
-  width: 100%;
-  height: 100px;
-  z-index: -1;
 }
 
 .menu-item {
@@ -412,10 +389,6 @@ onBeforeUnmount(() => document.removeEventListener("click", onDocumentClick))
   margin: 0;
   border: none;
   border-top: 1px solid #eee;
-}
-
-.logout-item {
-  color: #a46c3a;
 }
 
 .admin {

@@ -1,6 +1,13 @@
 <script setup>
 import TutorReviews from "@/components/TutorReviews.vue"
 import { useAuth0 } from "@auth0/auth0-vue"
+import { computed } from "vue"
+
+const initials = computed(() => {
+  const n = (props.tutor?.name || "").trim()
+  if (!n) return "?"
+  return n[0].toUpperCase()
+})
 
 const props = defineProps({
   tutor: { type: Object, required: true },
@@ -42,9 +49,17 @@ async function deleteTutor() {
 
 <template>
   <div class="card shadow-sm h-100">
-    <div class="profile-img-wrapper">
-      <img :src="props.tutor.image" alt="Tutor Bild" class="profile-img" />
-    </div>
+   <div class="profile-img-wrapper">
+  <img
+    v-if="props.tutor.image"
+    :src="props.tutor.image"
+    alt="Tutor Bild"
+    class="profile-img"
+  />
+  <div v-else class="initial-avatar">
+    {{ initials }}
+  </div>
+</div>
 
     <div class="card-body d-flex flex-column">
       <h5 class="card-title">{{ props.tutor.name }}</h5>
@@ -130,5 +145,16 @@ async function deleteTutor() {
   object-fit: cover;
   object-position: center;
   display: block;
+}
+.initial-avatar {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 64px;
+  font-weight: 800;
+  color: #3b3b3b;
+  background: #e9e3d3; /* passt zu eurem Look */
 }
 </style>
