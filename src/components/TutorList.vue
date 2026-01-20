@@ -574,8 +574,8 @@ watch(
 .tutor-page {
   min-height: 100vh;
   background-image:
-    linear-gradient(rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.75)),
-    url("@/assets/img/background.avif");
+    linear-gradient(rgba(255, 255, 255, 0.32), rgba(255, 255, 255, 0.75)),
+    url('@/assets/img/coffee.jpg');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
