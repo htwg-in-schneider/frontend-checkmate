@@ -15,6 +15,7 @@ import Unterricht from "@/views/Unterricht.vue"
 import Messages from "@/views/Messages.vue"
 import AngebotErstellen from "@/views/AngebotErstellen.vue"
 import MeineAngebote from "@/views/MeineAngebote.vue"
+import TutorUnterricht from "@/views/TutorUnterricht.vue"
 
 
 const routes = [
@@ -152,6 +153,11 @@ const routes = [
     path: "/unterricht",
     name: "unterricht",
     component: Unterricht
+  },
+
+  { path: "/tutorunterricht", 
+    name: "tutorunterricht",
+    component: TutorUnterricht
   },
 
   {

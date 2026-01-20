@@ -183,6 +183,11 @@ onBeforeUnmount(() => document.removeEventListener("click", onDocumentClick))
           </button>
 
           <button class="menu-item" @click="go('/messages')">Nachrichten</button>
+          
+           <button v-if="isTutor" class="menu-item tutor" @click="go('/tutorunterricht')">
+           Tutor Unterricht
+           </button>
+
 
           <!-- ✅ Admin -->
           <button v-if="isAdmin" class="menu-item admin" @click="go('/adminTransactions')">

@@ -70,7 +70,10 @@ function goBack() {
 function openChat(u) {
   const otherOauthId = u.oauthId || u.otherOauthId
   if (!otherOauthId) return
-  router.push({ path: "/messages", query: { user: otherOauthId } })
+  router.push({
+  path: "/messages",
+  query: { tutorId: b.tutorId, studentOauthId: studentOauthId }
+})
 }
 </script>
 

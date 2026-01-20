@@ -12,8 +12,8 @@ function goMyOffers() {
   router.push('/meine-angebote') // Route ggf. später anlegen
 }
 
-function goLessons() {
-  router.push('/unterricht') // Route ggf. später anlegen
+function goLessonsTutor() {
+  router.push('/tutorunterricht') // Route ggf. später anlegen
 }
 </script>
 
@@ -33,8 +33,8 @@ function goLessons() {
         <span>Meine<br />Angebote</span>
       </button>
 
-      <button class="card card3" @click="goLessons">
-        <span>Unterrichts -<br />stunden</span>
+      <button class="card card3" @click="goLessonsTutor">
+        <span>Tutor Unterrichts -<br />stunden</span>
       </button>
     </div>
   </main>
