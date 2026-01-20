@@ -178,14 +178,14 @@ onBeforeUnmount(() => document.removeEventListener("click", onDocumentClick))
           </button>
 
           <!-- ✅ Für alle eingeloggten (Tutor+Student) -->
-          <button class="menu-item" @click="go('/unterricht')">
+          <button v-if="!isTutor" class="menu-item" @click="go('/unterricht')">
             Unterrichtsstunden
           </button>
 
           <button class="menu-item" @click="go('/messages')">Nachrichten</button>
-          
+
            <button v-if="isTutor" class="menu-item tutor" @click="go('/tutorunterricht')">
-           Tutor Unterricht
+           Gebuchte Unterrichtsstunden
            </button>
 
 
@@ -196,8 +196,6 @@ onBeforeUnmount(() => document.removeEventListener("click", onDocumentClick))
           <button v-if="isAdmin" class="menu-item admin" @click="go('/adminUsersView')">
             Userübersicht
           </button>
-
-
     
         </div>
       </div>

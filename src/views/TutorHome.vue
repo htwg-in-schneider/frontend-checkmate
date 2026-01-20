@@ -34,7 +34,7 @@ function goLessonsTutor() {
       </button>
 
       <button class="card card3" @click="goLessonsTutor">
-        <span>Tutor Unterrichts -<br />stunden</span>
+        <span>Gebuchte <br />Unterrichtsstunden</span>
       </button>
     </div>
   </main>

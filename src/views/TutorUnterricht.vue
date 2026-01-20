@@ -140,7 +140,7 @@ function openStudentChat(b) {
 
 <template>
   <div class="container py-4">
-    <h1>Meine gebuchten Stunden (Tutor)</h1>
+    <h1>Meine gebuchten Stunden </h1>
 
     <p v-if="loading">Lade Buchungen…</p>
     <p v-else-if="error" class="text-danger">{{ error }}</p>
