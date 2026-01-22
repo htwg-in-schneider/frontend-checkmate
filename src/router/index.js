@@ -37,11 +37,7 @@ const routes = [
     component: () => import('@/views/AdminHome.vue'),
     beforeEnter: authGuard,
   },
-  {
-    path: '/register',
-    name: 'register',
-    component: Register,
-  },
+ 
 
   {
     path: '/student',
