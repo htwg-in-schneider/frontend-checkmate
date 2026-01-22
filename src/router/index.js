@@ -1,7 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import Home from '@/views/Home.vue'
 import TutorDetail from '@/views/TutorDetail.vue'
-import Register from '@/views/Register.vue'
 import { authGuard } from '@auth0/auth0-vue'
 import Checkout from "@/views/Checkout.vue"
 import Impressum from "@/views/Impressum.vue"
